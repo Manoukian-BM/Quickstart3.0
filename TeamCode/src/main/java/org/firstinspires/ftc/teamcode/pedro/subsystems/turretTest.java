@@ -24,7 +24,7 @@ public class turretTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        // Mapeamento do hardware (ID configurado no Driver Station)
+        // Mapeamento do *hardware* (*ID* configurado no Driver Station)
         // Configuração do Atuador
         DcMotorEx motorTurret = hardwareMap.get(DcMotorEx.class, "motorTurret");
 
@@ -63,7 +63,7 @@ public class turretTest extends LinearOpMode {
             motorTurret.setTargetPosition(targetTicks);
 
             // Define a velocidade máxima que a turret usará para buscar a posição (0.0 a 1.0)
-            motorTurret.setPower(0.5);
+            motorTurret.setPower(0.75);
 
             // Telemetria para acompanhar os testes na Driver
             telemetry.addData("Alvo (Graus)", posicaoAlvoGraus);

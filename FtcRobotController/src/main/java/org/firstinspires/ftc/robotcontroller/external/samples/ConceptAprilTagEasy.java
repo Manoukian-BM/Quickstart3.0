@@ -32,6 +32,7 @@ package org.firstinspires.ftc.robotcontroller.external.samples;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraCompatibilityManager;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -46,8 +47,6 @@ import java.util.List;
 /*
  * This OpMode illustrates the basics of AprilTag recognition and pose estimation, using
  * the easy way.
- *
- * Note: See ConceptAprilTag.java for how to add a camera compatibility quirk
  *
  * For an introduction to AprilTags, see the FTC-DOCS link below:
  * https://ftc-docs.firstinspires.org/en/latest/apriltag/vision_portal/apriltag_intro/apriltag-intro.html
@@ -82,10 +81,33 @@ public class ConceptAprilTagEasy extends LinearOpMode {
      */
     private VisionPortal visionPortal;
 
+    // To find the VID/PID for a camera:
+    //
+    // Linux: open a terminal, run "lsusb", locate the line for your camera,
+    // and find the section that resembles "ID 1d6b:0002"; this is VID:PID
+    //
+    // OSX: open a terminal, run "system_profiler SPUSBDataType", locate the
+    // section for your camera, and find the "Product ID:" and "Vendor ID:"
+    // listings in the output
+    //
+    // Windows: open a PowerShell, run:
+    // Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -like 'USB*' } | Select-Object FriendlyName, InstanceId
+    // and locate the line for your camera. The VID and PID is listed directly in the line.
+    static final int VENDOR_ID_SUNPLUS_INNOVATION_TECHNOLOGY = 0x1BCF;
+    static final int PRODUCT_ID_ARDUCAM_OV5648 = 0x284C;
+
     @Override
     public void runOpMode() {
 
-        // See ConceptAprilTag.java for how to add a camera compatibility quirk
+        // Demonstrate how to add a camera compatibility quirk
+        // these can sometimes be needed if a camera behaves poorly.
+        // Quirks have no effect unless the camera you are using matches the specified VID/PID
+        CameraCompatibilityManager.getInstance()
+                .addQuirk(
+                        VENDOR_ID_SUNPLUS_INNOVATION_TECHNOLOGY,
+                        PRODUCT_ID_ARDUCAM_OV5648,
+                        CameraCompatibilityManager.Quirk.AVOID_LIB_USB_RESET_DEVICE);
+
         initAprilTag();
 
         // Wait for the DS start button to be touched.
@@ -145,26 +167,40 @@ public class ConceptAprilTagEasy extends LinearOpMode {
         telemetry.addData("# AprilTags Detected", currentDetections.size());
 
         // Step through the list of detections and display info for each one.
+        // Step through the list of detections and display info for each one.
         for (AprilTagDetection detection : currentDetections) {
             if (detection instanceof AprilTagSingleDetection) {
                 AprilTagSingleDetection singleDet = (AprilTagSingleDetection) detection;
 
                 if (singleDet.metadata != null) {
                     telemetry.addLine(String.format("\n==== (ID %d) %s", singleDet.id, singleDet.metadata.name));
-                    telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
-                    telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
-                    telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
+                    telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", singleDet.ftcPose.x, singleDet.ftcPose.y, singleDet.ftcPose.z));
+                    telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", singleDet.ftcPose.pitch, singleDet.ftcPose.roll, singleDet.ftcPose.yaw));
+                    telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", singleDet.ftcPose.range, singleDet.ftcPose.bearing, singleDet.ftcPose.elevation));
                 } else {
                     telemetry.addLine(String.format("\n==== (ID %d) Unknown", singleDet.id));
                     telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", singleDet.center.x, singleDet.center.y));
                 }
-            }  else {
-                AprilTagClusterDetection clusterDet = (AprilTagClusterDetection) detection;
-                telemetry.addLine(String.format("\n==== Tag Cluster (%s)", clusterDet.metadata.name));
-                telemetry.addLine(String.format("Percent tags found: %d", clusterDet.percentClusterFound));
+            if (detection.metadata != null) {
+                telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
                 telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
                 telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
                 telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
+            } else {
+                AprilTagClusterDetection clusterDet = (AprilTagClusterDetection) detection;
+
+                if (clusterDet.metadata != null) {
+                    telemetry.addLine(String.format("\n==== Tag Cluster (%s)", clusterDet.metadata.name));
+                } else {
+                    telemetry.addLine("\n==== Tag Cluster (Unknown)");
+                }
+
+                telemetry.addLine(String.format("Percent tags found: %d", clusterDet.percentClusterFound));
+                telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", clusterDet.ftcPose.x, clusterDet.ftcPose.y, clusterDet.ftcPose.z));
+                telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", clusterDet.ftcPose.pitch, clusterDet.ftcPose.roll, clusterDet.ftcPose.yaw));
+                telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", clusterDet.ftcPose.range, clusterDet.ftcPose.bearing, clusterDet.ftcPose.elevation));
+                telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
+                telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
             }
         }   // end for() loop
 

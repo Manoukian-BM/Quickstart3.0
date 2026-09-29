@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
-public class mecanumSub {
+public class driveTrainSub {
 
     private final DcMotor roda0;
     private final DcMotor roda1;
@@ -22,7 +22,7 @@ public class mecanumSub {
     double lastError = 0;
     double timer = 0;
 
-    public mecanumSub(HardwareMap hardwareMap) {
+    public driveTrainSub(HardwareMap hardwareMap) {
 
         roda0 = hardwareMap.get(DcMotor.class, "roda0");
         roda1 = hardwareMap.get(DcMotor.class, "roda1");

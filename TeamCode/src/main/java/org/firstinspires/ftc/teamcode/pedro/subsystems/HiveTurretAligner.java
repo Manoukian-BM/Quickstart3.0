@@ -11,15 +11,14 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * aa
- * Alinha uma turret acionada por um servo Taura BL35 com uma HIVE detectada
+ * Alinha a turret com a HIVE detectada
  * pela Limelight3A.
- *
  * Escala angular do Taura BL35:
+
  * 0.0 = 90 graus horario
  * 0.5 = 0 graus, apontado para frente
  * 1.0 = 90 graus anti-horario
- *
+
  * Somente as AprilTags 39, 40, 43 e 44 sao aceitas.
  */
 public final class HiveTurretAligner {
@@ -48,7 +47,7 @@ public final class HiveTurretAligner {
 
     private final double positionPerDegree;
     private final double correctionSign;
-    private final double deadbandDegrees;
+    private final double tolAng;
 
     private double targetPosition;
     private double lastTxDegrees;
@@ -57,11 +56,11 @@ public final class HiveTurretAligner {
 
     /**
      * @param limelight Limelight3A configurada para detectar AprilTags
-     * @param turret Servo Taura BL35 configurado em modo angular
+     * @param turret Servo Taura configurado em modo angular
      * @param centerPosition Posicao central do servo.
-     *                       Para o Taura BL35, normalmente 0.5
+     *                       Normalmente em 0.5
      * @param positionPerDegree Ganho em posicao do servo por grau de erro.
-     *                          Valor inicial sugerido: 0.0045
+     *                          Valor inicial: 0.0045
      * @param correctionSign Use 1 ou -1 conforme o sentido de correcao
      * @param deadbandDegrees Erro angular considerado alinhado
      */
@@ -92,7 +91,7 @@ public final class HiveTurretAligner {
         this.turret = turret;
         this.positionPerDegree = positionPerDegree;
         this.correctionSign = correctionSign;
-        this.deadbandDegrees = deadbandDegrees;
+        this.tolAng = deadbandDegrees;
 
         this.targetPosition = clipServoPosition(centerPosition);
 
@@ -114,7 +113,7 @@ public final class HiveTurretAligner {
 
     /**
      * Le a Limelight e atualiza a posicao da turret.
-     *
+
      * Este metodo deve ser chamado repetidamente dentro do loop do OpMode.
      */
     public Status update() {
@@ -140,7 +139,7 @@ public final class HiveTurretAligner {
          * Se o erro horizontal estiver dentro da tolerancia,
          * a turret ja esta alinhada.
          */
-        if (Math.abs(lastTxDegrees) <= deadbandDegrees) {
+        if (Math.abs(lastTxDegrees) <= tolAng) {
             status = Status.ALIGNED;
             return status;
         }
@@ -166,7 +165,7 @@ public final class HiveTurretAligner {
 
     /**
      * Procura somente as tags 39, 40, 43 e 44.
-     *
+
      * Se mais de uma estiver visivel, escolhe a de maior area,
      * normalmente a mais proxima ou mais bem detectada.
      */
@@ -201,10 +200,10 @@ public final class HiveTurretAligner {
 
     /**
      * Converte um angulo Taura para a posicao do servo.
-     *
+
      * Angulo positivo = anti-horario
      * Angulo negativo = horario
-     *
+
      * Exemplos:
      *  90 graus  -> 1.0
      *   0 graus  -> 0.5

@@ -1,29 +1,24 @@
 package org.firstinspires.ftc.teamcode.pedro;
 
-import com.pedropathing.follower.Follower;
-import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 // Subsistemas
-import org.firstinspires.ftc.teamcode.pedro.subsystems.IntakeSub;
+//import org.firstinspires.ftc.teamcode.pedro.subsystems.turretOdo;
 import org.firstinspires.ftc.teamcode.pedro.subsystems.shooterSub;
-import org.firstinspires.ftc.teamcode.pedro.subsystems.servoSub;
+import org.firstinspires.ftc.teamcode.pedro.subsystems.intakeSub;
 import org.firstinspires.ftc.teamcode.pedro.subsystems.driveTrainSub;
-import org.firstinspires.ftc.teamcode.pedro.subsystems.HiveTurretAligner;
-import org.firstinspires.ftc.teamcode.pedro.subsystems.turretOdo;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+@TeleOp(name = "TeleOpRed", group = "aaa teleOp oficial")
+public class teleOpRed extends LinearOpMode {
 
-import java.util.List;
+    // ===== Subsistemas =====
+    private shooterSub shooter;
+    private intakeSub intake;
+    private driveTrainSub drive;
 
-@TeleOp(name = "TeleOp", group = "Advanced")
-public class teleOp extends LinearOpMode {
 
     private enum DriveState {
         MANUAL,
@@ -32,31 +27,29 @@ public class teleOp extends LinearOpMode {
         AUTO_ALIGN_ESTACIONAMENTO,
         HOLD_ESTACIONAMENTO
     }
+    //private Pose startPose = new Pose(13, 120, Math.toRadians(-90));
 
 
     private static final long HOLD_TIME_MS = 800;
     private long holdStartTime = 0;
     private boolean pathIniciado = false;
 
-    private Servo servo1;
     private RevBlinkinLedDriver led;
 
-    private Follower follower;
+    //private Follower follower;
 
     private ElapsedTime timer;
 
-    double idleVelLonge = (2450 * 28) / 60.0;
+    double idleVel = (1900 * 28) / 60.0;
 
-    private turretOdo turret;
+    //private turretOdo turret;
     private boolean previousA;
 
     // true para Red; false para Blue
-    private static final boolean RED_ALLIANCE = true;
+    private static final boolean RED_ALLIANCE = false;
 
     @Override
     public void runOpMode() {
-
-        servo1 = hardwareMap.get(Servo.class, "servo1");
 
         double tempo = 0;
 
@@ -72,7 +65,7 @@ public class teleOp extends LinearOpMode {
         double chosenHiveX = 0;
         double chosenHiveY = 0;
 
-        turret = new turretOdo(hardwareMap, follower, RED_ALLIANCE);
+        //turret = new turretOdo(hardwareMap, follower, RED_ALLIANCE);
 
         telemetry.addLine("TeleOp pronto.");
         telemetry.update();
@@ -84,30 +77,28 @@ public class teleOp extends LinearOpMode {
         while (opModeIsActive()) {
 
 
-            Pose pose = follower.pose();
+            //Pose pose = follower.pose();
 
             tempo = System.currentTimeMillis();
 
-            follower.update();
+            //follower.update();
 
             // Escolhe a HIVE mais próxima somente quando A é pressionado.
             if (gamepad1.a && !previousA) {
-                turret.selectNearestHive();
+                //turret.selectNearestHive();
             }
             previousA = gamepad1.a;
 
             // Enquanto A estiver pressionado, a turret acompanha a HIVE escolhida.
             if (gamepad1.a) {
-                turret.update();
+                //turret.update();
             }
 
-            telemetry.addData("HIVE escolhida", turret.getSelectedHive());
-            telemetry.addData("Ângulo relativo", turret.getAngleDegrees());
-            telemetry.addData("Posição do servo", turret.getServoPosition());
+            //telemetry.addData("HIVE escolhida", turret.getSelectedHive());
+            //telemetry.addData("Ângulo relativo", turret.getAngleDegrees());
+            //
+            // telemetry.addData("Posição do servo", turret.getServoPosition());
             telemetry.update();
-
-            // ===== Subsistemas =====
-
 
             // ===== Telemetria =====
 

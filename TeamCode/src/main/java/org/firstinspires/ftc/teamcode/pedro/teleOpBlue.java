@@ -26,7 +26,9 @@ public class teleOpBlue extends LinearOpMode {
     private servoSub servo;
     private intakeSub intake;
     private shooterSub shooter;
-    private turretOdo turret;
+    private Servo turret;
+
+    //private turretOdo turret;
 
     private enum DriveState {
         MANUAL,
@@ -40,14 +42,12 @@ public class teleOpBlue extends LinearOpMode {
     private long holdStartTime = 0;
     private boolean pathIniciado = false;
 
-    private DistanceSensor distIntake1, distIntake2, distIntake3;
+    private DistanceSensor distIntake1, distIntake2, distIntake3, distIntake4;;
 
-    private Follower follower;
+    //private Follower follower;
 
     private ElapsedTime timer;
 
-    double idleVel = (1900 * 28) / 60.0;
-    private boolean previousA;
     double pose = 0.5;
 
     // true para Red; false para Blue
@@ -69,14 +69,19 @@ public class teleOpBlue extends LinearOpMode {
         double chosenHiveX = 0;
         double chosenHiveY = 0;
 
-        turret = new turretOdo(hardwareMap, follower, false);
+        //turret = new turretOdo(hardwareMap, follower, false);
+        servo = new servoSub(hardwareMap);
         shooter = new shooterSub(hardwareMap, hardwareMap.get(DcMotorEx.class, "indexer"));
         intake = new intakeSub(hardwareMap);
         drive = new driveTrainSub(hardwareMap);
 
-//        distIntake1 = hardwareMap.get(DistanceSensor.class, "distIntake1");
-//        distIntake2 = hardwareMap.get(DistanceSensor.class, "distIntake2");
-//        distIntake3 = hardwareMap.get(DistanceSensor.class, "distIntake3");
+        distIntake1 = hardwareMap.get(DistanceSensor.class, "distIntake1");
+        distIntake2 = hardwareMap.get(DistanceSensor.class, "distIntake2");
+        distIntake3 = hardwareMap.get(DistanceSensor.class, "distIntake3");
+        distIntake4 = hardwareMap.get(DistanceSensor.class, "distIntake4");
+
+
+        turret = hardwareMap.get(Servo.class, "turret");
 
         telemetry.addLine("TeleOp pronto.");
         telemetry.update();
@@ -87,45 +92,44 @@ public class teleOpBlue extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-//            double dI1 = distIntake1.getDistance(DistanceUnit.CM);
-//            double dI2 = distIntake2.getDistance(DistanceUnit.CM);
-//            double dI3 = distIntake3.getDistance(DistanceUnit.CM);
+            double dI1 = distIntake1.getDistance(DistanceUnit.CM);
+            double dI2 = distIntake2.getDistance(DistanceUnit.CM);
+            double dI3 = distIntake3.getDistance(DistanceUnit.CM);
+            double dI4 = distIntake4.getDistance(DistanceUnit.CM);
 
 
-            Pose pose = follower.pose();
-            turret.getSelectedHive();
+            //Pose pose = follower.pose();
+            //turret.getSelectedHive();
 
             tempo = System.currentTimeMillis();
 
             //follower.update();
 
-            // Escolhe a HIVE mais próxima quando pressionado.
-//            if (gamepad1.a && !previousA) {
-//                turret.selectNearestHive();
-//            }
-//            previousA = gamepad1.a;
-//
-//            // Enquanto pressionado, a turret segue a HIVE.
-//            if (gamepad1.a) {
-//                turret.update();
-//            }
-//
-
             // ===== subsystems =====
 
-            intake.update(gamepad1, gamepad2, shooter.isAtirando());
+            if (pose > -0.0051 && pose < 1.0051 && Math.abs(gamepad2.right_stick_x) > 0.1) {
+                pose = pose + gamepad2.right_stick_x * 0.005;
+                turret.setPosition(pose);
+            } else if (gamepad1.a) {
+                pose = 0.5;
+                turret.setPosition(0.5);
+            }
+
+            servo.update(gamepad1, gamepad2, shooter.isAtirando());
+            intake.update(gamepad1, gamepad2, shooter.isAtirando(), dI1, dI2, dI3, dI4);
             shooter.update(gamepad1, gamepad2, intake.isColetando(), intake.isCuspindo());
-            turret.update(gamepad1, gamepad2);
+            //turret.update(gamepad1, gamepad2);
             drive.teleopUpdate(gamepad1, gamepad2);
 
             // ===== Telemetria =====
-            telemetry.addData("HIVE escolhida", turret.getSelectedHive());
-            telemetry.addData("Ângulo relativo", turret.getAngleDegrees());
-            telemetry.addData("Posição do servo", turret.getServoPosition());
-            telemetry.addData("Follower Busy", follower.isBusy());
-//            telemetry.addData("DistIntake1", dI1);
-//            telemetry.addData("DistIntake1", dI2);
-//            telemetry.addData("DistIntake2", dI3);
+//            telemetry.addData("HIVE escolhida", turret.getSelectedHive());
+//            telemetry.addData("Ângulo relativo", turret.getAngleDegrees());
+//            telemetry.addData("Posição do servo", turret.getServoPosition());
+//            telemetry.addData("Follower Busy", follower.isBusy());
+            telemetry.addData("DistIntake1", dI1);
+            telemetry.addData("DistIntake1", dI2);
+            telemetry.addData("DistIntake2", dI3);
+            telemetry.addData("DistIntake3", dI4);
             telemetry.addData("tempo: ", timer);
             telemetry.update();
 

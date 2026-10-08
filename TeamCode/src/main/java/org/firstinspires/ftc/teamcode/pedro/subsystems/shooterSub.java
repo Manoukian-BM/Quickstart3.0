@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedro.subsystems;
 
+import com.qualcomm.robotcore.hardware.ColorRangeSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -13,6 +14,7 @@ public class shooterSub {
     private final DcMotorEx rshooter;
     private final DcMotorEx indexer;
     private final DcMotor intake;
+    private final ColorRangeSensor distIntake4; // I2C 03 control
     double VelRPM = 0;
     double rpmR, correction, error, power;
     boolean shooterAtirando;
@@ -27,6 +29,8 @@ public class shooterSub {
     private double rpmAtual = 0;
 
     public shooterSub(HardwareMap hardwareMap, DcMotorEx indexer) {
+
+        distIntake4 = hardwareMap.get(ColorRangeSensor.class, "distIntake4");
         lshooter = hardwareMap.get(DcMotorEx.class, "shooterR");
         rshooter = hardwareMap.get(DcMotorEx.class, "shooterL");
         this.indexer = indexer;
@@ -37,8 +41,8 @@ public class shooterSub {
         lshooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         rshooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
-        lshooter.setDirection(DcMotorSimple.Direction.REVERSE);
-        rshooter.setDirection(DcMotorSimple.Direction.REVERSE);
+        lshooter.setDirection(DcMotorSimple.Direction.FORWARD);
+        rshooter.setDirection(DcMotorSimple.Direction.FORWARD);
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         indexer.setDirection(DcMotorSimple.Direction.FORWARD);
     }
@@ -56,24 +60,24 @@ public class shooterSub {
 
         switch (estadoAtual) {
             case IDLE:
-                if (!gamepad2.right_bumper) {
                     lshooter.setPower(0);
                     rshooter.setPower(0);
-                }
+                    indexer.setPower(0);
                 shooterReady = false;
                 break;
 
             case ATIRANDO:
-                targetRPM = 1900;
+                targetRPM = 3500;
+
                 rpmR = (Math.abs(rshooter.getVelocity() / 28) * 60.0);
                 error = targetRPM - rpmR;
-                correction = error * 0.0055;
-                power = 0.6 + correction;
+                correction = error * 0.0085;
+                power = 0.7 + correction;
                 power = Math.max(0, Math.min(power,1));
-                rshooter.setPower(-power);
-                lshooter.setPower(-power);
+                rshooter.setPower(power);
+                lshooter.setPower(power);
 
-                if (rpmAtual >= 1900) {
+                if (rpmAtual >= 2700) {
                     indexer.setPower(1.0);;
                     intake.setPower(-1);
                 } else {

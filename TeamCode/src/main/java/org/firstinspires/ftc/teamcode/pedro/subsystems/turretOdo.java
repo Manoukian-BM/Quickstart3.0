@@ -42,8 +42,6 @@ public class turretOdo {
         turret.setPosition(CENTRO);
     }
 
-
-
     public void selectNearestHive() {
         Pose pose = follower.pose();
 
@@ -58,8 +56,7 @@ public class turretOdo {
         double rightDy = rightY - pose.y();
 
         // Comparação de distância por hipotenusa
-        if (leftDx * leftDx + leftDy * leftDy
-                <= rightDx * rightDx + rightDy * rightDy) {
+        if ((leftDx * leftDx + leftDy * leftDy) <= (rightDx * rightDx + rightDy * rightDy)) {
             targetX = leftX;
             targetY = leftY;
             selectedHive = "Esquerda";
@@ -81,8 +78,7 @@ public class turretOdo {
         switch (EstadoAtual) {
             case MANUAL:
                 if (Math.abs(gamepad2.right_stick_x) > 0.2) {
-                    posT = 0.5 + gamepad.left_stick_y * 0.5;
-                    turret.setPosition(posT);
+                    turret.setPosition(posT + (gamepad2.right_stick_x / 2));
                 } else if (gamepad2.dpad_up) {
                     posT = 0.5;
                     turret.setPosition(posT);
@@ -92,8 +88,7 @@ public class turretOdo {
             case AUTOMATICO:
                 //função de alinhamento da turret com a hive escolhida
                 Pose pose = follower.pose();
-                double angle = Math.atan2(targetY - pose.y(), targetX - pose.x())
-                        - pose.heading();
+                double angle = Math.atan2(targetY - pose.y(), targetX - pose.x()) - pose.heading();
                 angle = Math.atan2(Math.sin(angle), Math.cos(angle)); // normaliza o angulo no intervalo rad de -pi e +pi
                 //evita que o mesmo número seja representado por valores diferentes (e.g 179 e −181)
                 angleDegrees = Math.toDegrees(angle); //rad para graus

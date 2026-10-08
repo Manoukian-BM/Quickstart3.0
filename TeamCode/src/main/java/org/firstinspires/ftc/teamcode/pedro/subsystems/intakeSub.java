@@ -32,11 +32,13 @@ public class intakeSub {
         indexer.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 
-    public void update(Gamepad gamepad1, Gamepad gamepad2, boolean shooterAtivo /*double distIntake1Val, double distIntake2Val,
-                       double distIntake3Val*/) {
+    public void update(Gamepad gamepad1, Gamepad gamepad2, boolean shooterAtivo,
+                       double distIntake1Val, double distIntake2Val,
+                       double distIntake3Val, double distIntake4Val) {
+
         recemCarregado = false;
 
-        if (gamepad2.left_bumper ) {
+        if (gamepad2.left_bumper) {
             estadoAtual = EstadoIntake.EXPELIR;
         } else if ((gamepad2.right_bumper)
                 || (gamepad1.square))   {
@@ -88,8 +90,8 @@ public class intakeSub {
                 break;
 
             case EXPELIR:
-                intake.setPower(0.75);
-                indexer.setPower(-1.0);
+                intake.setPower(1.0);
+                indexer.setPower(1.0);
                 break;
 
             case CARREGADO:

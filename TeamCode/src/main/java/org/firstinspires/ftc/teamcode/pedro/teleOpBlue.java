@@ -2,6 +2,9 @@ package org.firstinspires.ftc.teamcode.pedro;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -17,6 +20,9 @@ import org.firstinspires.ftc.teamcode.pedro.subsystems.shooterSub;
 import org.firstinspires.ftc.teamcode.pedro.subsystems.intakeSub;
 import org.firstinspires.ftc.teamcode.pedro.subsystems.driveTrainSub;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @TeleOp(name = "TeleOpBlue", group = "aaa teleOp oficial")
 public class teleOpBlue extends LinearOpMode {
 
@@ -30,14 +36,11 @@ public class teleOpBlue extends LinearOpMode {
 
     //private turretOdo turret;
 
-    private enum DriveState {
-        MANUAL,
-        AUTO_ALIGN,
-        HOLD,
-        AUTO_ALIGN_ESTACIONAMENTO,
-        HOLD_ESTACIONAMENTO
-    }
+    private Limelight3A limelight;
     //private Pose startPose = new Pose(13, 120, Math.toRadians(-90));
+
+    private static final int[] TARGET_IDS = {42, 43, 44, 45};
+    private static final int[] TARGET_ID2 = {38, 39, 40, 41};
 
     private long holdStartTime = 0;
     private boolean pathIniciado = false;
@@ -47,6 +50,7 @@ public class teleOpBlue extends LinearOpMode {
     //private Follower follower;
 
     private ElapsedTime timer;
+    private Servo servoAR, servoAL;
 
     double pose = 0.5;
 
@@ -69,16 +73,23 @@ public class teleOpBlue extends LinearOpMode {
         double chosenHiveX = 0;
         double chosenHiveY = 0;
 
+
         //turret = new turretOdo(hardwareMap, follower, false);
         servo = new servoSub(hardwareMap);
         shooter = new shooterSub(hardwareMap, hardwareMap.get(DcMotorEx.class, "indexer"));
         intake = new intakeSub(hardwareMap);
         drive = new driveTrainSub(hardwareMap);
 
+
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+
         distIntake1 = hardwareMap.get(DistanceSensor.class, "distIntake1");
         distIntake2 = hardwareMap.get(DistanceSensor.class, "distIntake2");
         distIntake3 = hardwareMap.get(DistanceSensor.class, "distIntake3");
         distIntake4 = hardwareMap.get(DistanceSensor.class, "distIntake4");
+
+        servoAR = hardwareMap.get(Servo.class, "servoAR");
+        servoAL = hardwareMap.get(Servo.class, "servoAL");
 
 
         turret = hardwareMap.get(Servo.class, "turret");
@@ -86,9 +97,19 @@ public class teleOpBlue extends LinearOpMode {
         telemetry.addLine("TeleOp pronto.");
         telemetry.update();
 
+        limelight.pipelineSwitch(1);
+        limelight.setPollRateHz(30);
+
         waitForStart();
 
+        if (isStopRequested()) return;
+
+        limelight.start();
+
         timer = new ElapsedTime();
+
+        servoAR.setPosition(0.6);
+        servoAL.setPosition(0.6);
 
         while (opModeIsActive()) {
 
@@ -97,7 +118,7 @@ public class teleOpBlue extends LinearOpMode {
             double dI3 = distIntake3.getDistance(DistanceUnit.CM);
             double dI4 = distIntake4.getDistance(DistanceUnit.CM);
 
-
+            LLResult result = limelight.getLatestResult();
             //Pose pose = follower.pose();
             //turret.getSelectedHive();
 
@@ -107,32 +128,61 @@ public class teleOpBlue extends LinearOpMode {
 
             // ===== subsystems =====
 
-            if (pose > -0.0051 && pose < 1.0051 && Math.abs(gamepad2.right_stick_x) > 0.1) {
-                pose = pose + gamepad2.right_stick_x * 0.005;
-                turret.setPosition(pose);
-            } else if (gamepad1.a) {
-                pose = 0.5;
-                turret.setPosition(0.5);
+            if (result != null && result.isValid() && gamepad2.square) {
+
+                // coleta todas as tags válidas detectadas nesse frame
+                List<LLResultTypes.FiducialResult> validTags = new ArrayList<>();
+                for (LLResultTypes.FiducialResult tag : result.getFiducialResults()) {
+                    for (int id : TARGET_IDS) {
+                        if (tag.getFiducialId() == id) {
+                            validTags.add(tag);
+                            break;
+                        }
+                    }
+                }
+
+                if (!validTags.isEmpty()) {
+
+                    // ordena pela posição tx e escolhe a do meio
+                    validTags.sort((a, b) -> Double.compare(a.getTargetXDegrees(), b.getTargetXDegrees()));
+                    LLResultTypes.FiducialResult middleTag = validTags.get(validTags.size() / 2);
+
+                    double tx = middleTag.getTargetXDegrees();
+                    double ty = middleTag.getTargetYDegrees();
+                    double ta = middleTag.getTargetArea();
+
+                    telemetry.addData("tag escolhida (meio)", middleTag.getFiducialId());
+                    telemetry.addData("tx", tx);
+                    telemetry.addData("ty", ty);
+                    telemetry.addData("ta", ta);
+
+                    if (tx > 2.5) {
+                        turret.setPosition(pose - 0.01);
+                    } else if (tx < 2.5) {
+                        turret.setPosition(pose + 0.01);
+                    }
+                }
             }
 
-            servo.update(gamepad1, gamepad2, shooter.isAtirando());
-            intake.update(gamepad1, gamepad2, shooter.isAtirando(), dI1, dI2, dI3, dI4);
-            shooter.update(gamepad1, gamepad2, intake.isColetando(), intake.isCuspindo());
-            //turret.update(gamepad1, gamepad2);
-            drive.teleopUpdate(gamepad1, gamepad2);
+                servo.update(gamepad1, gamepad2, shooter.tiroPolen(), shooter.tiroPolen());
+                intake.update(gamepad1, gamepad2, shooter.isAtirando(), dI1, dI2, dI3, dI4);
+                shooter.update(gamepad1, gamepad2, 10,
+                        intake.isColetando(), intake.isCuspindo());
+                //turret.update(gamepad1, gamepad2);
+                drive.teleopUpdate(gamepad1, gamepad2);
 
-            // ===== Telemetria =====
+                // ===== Telemetria =====
 //            telemetry.addData("HIVE escolhida", turret.getSelectedHive());
 //            telemetry.addData("Ângulo relativo", turret.getAngleDegrees());
 //            telemetry.addData("Posição do servo", turret.getServoPosition());
-//            telemetry.addData("Follower Busy", follower.isBusy());
-            telemetry.addData("DistIntake1", dI1);
-            telemetry.addData("DistIntake1", dI2);
-            telemetry.addData("DistIntake2", dI3);
-            telemetry.addData("DistIntake3", dI4);
-            telemetry.addData("tempo: ", timer);
-            telemetry.update();
-
+//            telemetry.addData("Follower ocupado", follower.isBusy());
+                telemetry.addData("DistIntake1", dI1);
+                telemetry.addData("DistIntake1", dI2);
+                telemetry.addData("DistIntake2", dI3);
+                telemetry.addData("DistIntake3", dI4);
+                telemetry.addData("tempo: ", timer);
+                telemetry.addData("rpm", shooter.getRPM());
+                telemetry.update();
             telemetry.update();
 
         }

@@ -17,7 +17,7 @@ public class turretOdo {
     boolean auto = true;
     boolean manual = false;
     private static final double CENTRO = 0.5;
-    private static final double MAX_ANGLE_DEGREES = 150.0;
+    private static final double MAX_ANGLE_DEGREES = 180.0;
     private static final double SERVO_DIRECTION = 1.0;
 
     private final Follower follower;
@@ -30,6 +30,8 @@ public class turretOdo {
     private double angleDegrees;
     private String selectedHive = "Nenhuma";
     private boolean hasTarget;
+    double distSelected = 0;
+    double leftD = 0, rightD = 0;
     double posT = 0.5;
 
     public turretOdo(
@@ -42,27 +44,27 @@ public class turretOdo {
         turret.setPosition(CENTRO);
     }
 
-    public void selectNearestHive() {
+    public void selecionarHive() {
         Pose pose = follower.pose();
+        // Posição das HIVEs
+        double leftHiveX = redAlliance ? 58.0 : 84.0;
+        double leftHiveY = redAlliance ? 55.0 : 88.0;
+        double rightHiveX = redAlliance ? 58.0 : 84.0;
+        double rightHiveY = redAlliance ? 88.0 : 55.0;
+        // distancia do robô até cada HIVE
+        double leftD = Math.sqrt(Math.pow(leftHiveX - follower.pose().x(), 2)
+                                + Math.pow(leftHiveY - follower.pose().y(), 2));
 
-        double leftX = redAlliance ? 58.0 : 84.0;
-        double leftY = redAlliance ? 55.0 : 88.0;
-        double rightX = redAlliance ? 58.0 : 84.0;
-        double rightY = redAlliance ? 88.0 : 55.0;
-
-        double leftDx = leftX - pose.x();
-        double leftDy = leftY - pose.y();
-        double rightDx = rightX - pose.x();
-        double rightDy = rightY - pose.y();
-
-        // Comparação de distância por hipotenusa
-        if ((leftDx * leftDx + leftDy * leftDy) <= (rightDx * rightDx + rightDy * rightDy)) {
-            targetX = leftX;
-            targetY = leftY;
+        double rightD = Math.sqrt(Math.pow(rightHiveX - follower.pose().x(), 2)
+                                + Math.pow(rightHiveY - follower.pose().y(), 2));
+        // Comparação de distância
+        if (leftD < rightD) {
+            targetX = leftHiveX;
+            targetY = leftHiveY;
             selectedHive = "Esquerda";
         } else {
-            targetX = rightX;
-            targetY = rightY;
+            targetX = rightHiveX;
+            targetY = rightHiveY;
             selectedHive = "Direita";
         }
         hasTarget = true;
@@ -103,14 +105,16 @@ public class turretOdo {
 
                 break;
         }
-        if (!hasTarget) {
+        if (hasTarget) {
+            double distSelected = Math.min(leftD, rightD);
+        } else {
             return;
         }
     }
 
-    public String getSelectedHive() {
-        return selectedHive;
-    }
+    public String getSelectedHive() { return selectedHive; }
+
+    public double getDist() { return distSelected; }
 
     public double getAngleDegrees() {
         return angleDegrees;

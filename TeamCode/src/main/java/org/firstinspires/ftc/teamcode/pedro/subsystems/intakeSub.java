@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedro.teleOpBlue;
 import org.firstinspires.ftc.teamcode.pedro.teleOpRed;
@@ -12,6 +13,7 @@ import org.firstinspires.ftc.teamcode.pedro.teleOpRed;
 public class intakeSub {
 
     private DcMotor intake, indexer;
+    private Servo servoIntk;
     RevBlinkinLedDriver led;
     teleOpRed redAlliance;
     teleOpBlue blueAlliance;
@@ -28,6 +30,8 @@ public class intakeSub {
         intake = hardwareMap.get(DcMotor.class, "intake");
         indexer = hardwareMap.get(DcMotor.class, "indexer");
 
+        servoIntk = hardwareMap.get(Servo.class, "servoIntk");
+
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         indexer.setDirection(DcMotorSimple.Direction.FORWARD);
     }
@@ -38,55 +42,30 @@ public class intakeSub {
 
         recemCarregado = false;
 
-        if (gamepad2.left_bumper) {
+        if (gamepad2.left_bumper || gamepad1.left_trigger > 0.2) {
             estadoAtual = EstadoIntake.EXPELIR;
-        } else if ((gamepad2.right_bumper)
-                || (gamepad1.square))   {
+        } else if ((gamepad1.right_trigger > 0.2)) {
             estadoAtual = EstadoIntake.COLETANDO;
-        }  else {
+        } else if (distIntake1Val < 4.2 && distIntake2Val < 2
+                    && distIntake3Val < 3.5 && distIntake4Val < 3.5) {
+            estadoAtual = EstadoIntake.CARREGADO;
+        } else {
             estadoAtual = EstadoIntake.IDLE;
         }
 
-        /*if (distIntake1Val <= 7 && distIntake2Val <= 6 && distIntake3Val <= 3) {
-            led.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
-            ledVermelho1.off();
-            ledVermelho2.off();
-            ledVerde1.on();
-            ledVerde2.on();
-            gamepad2.rumble(200);
-
-            if (shooterAtivo) {
-                intake.setPower(-1.0);
-            } else {
-                shooterVerde.setPower(0);
-                intake.setPower(0);
-            }
-        } */
-
         switch (estadoAtual) {
             case IDLE:
-//                ledVerde1.off();
-//                ledVerde2.off();
-//                ledVermelho1.on();
-//                ledVermelho2.on();
+                servoIntk.setPosition(1.0);
                 intake.setPower(0);
-                indexer.setPower(0);
+                //indexer.setPower(0);
                 if (!shooterAtivo) {
                     indexer.setPower(0);
                 }
                 break;
 
             case COLETANDO:
-//                ledVerde1.off();
-//                ledVerde2.off();
-//                ledVermelho1.on();
-//                ledVermelho2.on();
-                if (/*distIntake3Val <= 2*/ true) {
                     intake.setPower(-1.0);
-                    indexer.setPower(-1.0);
-                } else {
-                    indexer.setPower(0);
-                }
+                    indexer.setPower(-0.2);
                 break;
 
             case EXPELIR:
@@ -95,17 +74,16 @@ public class intakeSub {
                 break;
 
             case CARREGADO:
-//                ledVermelho1.off();
-//                ledVermelho2.off();
-//                ledVerde1.on();
-//                ledVerde2.on();
                 gamepad2.rumble(200);
+                gamepad1.rumble(200);
+
+                servoIntk.setPosition(0.65);
 
                 if (shooterAtivo) {
                     intake.setPower(-1.0);
                 } else {
                     indexer.setPower(0);
-                    intake  .setPower(0);
+                    intake.setPower(0);
                 }
                 break;
         }

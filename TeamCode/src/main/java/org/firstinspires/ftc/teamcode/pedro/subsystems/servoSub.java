@@ -12,7 +12,7 @@ public class servoSub {
     private final Servo turretAjustR, turretAjustL;
     private final Servo servoAR;
     private final Servo servoAL;
-    private final Servo servoTurretR, servoTurretL;
+    private final Servo servoR, servoL;
 
     private RevColorSensorV3 distIntake4; // I2C 03 control
 
@@ -28,13 +28,13 @@ public class servoSub {
         turretAjustL = hardwareMap.get(Servo.class, "turretAjustL");
         servoAR = hardwareMap.get(Servo.class, "servoAR");
         servoAL = hardwareMap.get(Servo.class, "servoAL");
-        servoTurretR = hardwareMap.get(Servo.class, "servoR");
-        servoTurretL = hardwareMap.get(Servo.class, "servoL");
+        servoR = hardwareMap.get(Servo.class, "servoR");
+        servoL = hardwareMap.get(Servo.class, "servoL");
 
         distIntake4 = hardwareMap.get(RevColorSensorV3.class, "distIntake4");
     }
 
-    public void update(Gamepad gamepad, Gamepad gamepad2, boolean shooting) {
+    public void update(Gamepad gamepad, Gamepad gamepad2, boolean polen, boolean nectar) {
         double blue = distIntake4.blue();
         double red = distIntake4.red();
         double green = distIntake4.green();
@@ -52,32 +52,26 @@ public class servoSub {
 
                 turretAjustL.setPosition(position);
                 turretAjustR.setPosition(position + 0.03);
-//            } if (gamepad.b && !previousB) {
-//                nectar = !nectar;
-//                double position = nectar ? 0.3 : 0.1;
-//
-//                turretAjustL.setPosition(position);
-//                turretAjustR.setPosition(position);
-//            }
             }
 
-        if (gamepad.a && !previousA) {
+        if (gamepad2.a && previousA) {
             flower = !flower;
-            double position = flower ? 1.0 : 0.0;
+            double position = flower ? 0.7 : 0.6; // 1 pra trás, 0.5 pra frente
 
             servoAR.setPosition(position);
             servoAL.setPosition(position);
         }
 
-        if (gamepad.dpad_left) {
-            servoTurretR.setPosition(0.5);
-            servoTurretL.setPosition(0.5);
-        } else if (gamepad.dpad_right){
-            servoTurretR.setPosition(0.32);
-            servoTurretL.setPosition(0.32);
-        }
+//        if (nectar) {
+//            servoR.setPosition(0.32);
+//            servoL.setPosition(0.32);
+//        } else if (polen) {
+//            servoR.setPosition(0.47);
+//            servoL.setPosition(0.47);
+//        }
 
-        previousA = gamepad.a;
+        previousA = gamepad2.a;
         previousB = gamepad.b;
     }
 }
+//67

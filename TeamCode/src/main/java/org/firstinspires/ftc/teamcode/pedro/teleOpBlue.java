@@ -164,25 +164,57 @@ public class teleOpBlue extends LinearOpMode {
                 }
             }
 
-                servo.update(gamepad1, gamepad2, shooter.tiroPolen(), shooter.tiroPolen());
-                intake.update(gamepad1, gamepad2, shooter.isAtirando(), dI1, dI2, dI3, dI4);
-                shooter.update(gamepad1, gamepad2, 10,
-                        intake.isColetando(), intake.isCuspindo());
-                //turret.update(gamepad1, gamepad2);
-                drive.teleopUpdate(gamepad1, gamepad2);
+            servo.update(gamepad1, gamepad2, shooter.tiroPolen(), shooter.tiroPolen());
+            intake.update(gamepad1, gamepad2, shooter.isAtirando(), dI1, dI2, dI3, dI4);
+            shooter.update(gamepad1, gamepad2, 10,
+                    intake.isColetando(), intake.isCuspindo());
+            //turret.update(gamepad1, gamepad2);
+            drive.teleopUpdate(gamepad1, gamepad2);
 
-                // ===== Telemetria =====
+            if (gamepad1.square) {
+                final double KP = 0.0001;         // ganho por grau
+                final double PASSO_MAX = 0.0014;  // maior passo por ciclo
+                final double ZONA_MORTA = 1.5;    // graus
+                final double SENTIDO = -1.0;
+                final double LIMITE_MIN = 0.25;
+                final double LIMITE_MAX = 0.75;
+
+                double erroX = 0;
+                boolean achou = false;
+                double menor = Double.MAX_VALUE;
+
+                if (result != null && result.isValid()) {
+                    for (LLResultTypes.FiducialResult tag : result.getFiducialResults()) {
+                        int id = tag.getFiducialId();
+                        double x = tag.getTargetXDegrees();
+                        if (id >= 38 && id <= 45 && Math.abs(x) < menor) {
+                            menor = Math.abs(x);
+                            erroX = x;
+                            achou = true;
+                        }
+                    }
+                }
+
+                if (achou && Math.abs(erroX) > ZONA_MORTA) {
+                    double passo = Math.max(-PASSO_MAX, Math.min(PASSO_MAX, KP * erroX));
+                    double novaPos = turret.getPosition() + SENTIDO * passo;
+                    novaPos = Math.max(LIMITE_MIN, Math.min(LIMITE_MAX, novaPos));
+                    turret.setPosition(novaPos);
+                }
+            }
+
+            // ===== Telemetria =====
 //            telemetry.addData("HIVE escolhida", turret.getSelectedHive());
 //            telemetry.addData("Ângulo relativo", turret.getAngleDegrees());
 //            telemetry.addData("Posição do servo", turret.getServoPosition());
 //            telemetry.addData("Follower ocupado", follower.isBusy());
-                telemetry.addData("DistIntake1", dI1);
-                telemetry.addData("DistIntake1", dI2);
-                telemetry.addData("DistIntake2", dI3);
-                telemetry.addData("DistIntake3", dI4);
-                telemetry.addData("tempo: ", timer);
-                telemetry.addData("rpm", shooter.getRPM());
-                telemetry.update();
+            telemetry.addData("DistIntake1", dI1);
+            telemetry.addData("DistIntake1", dI2);
+            telemetry.addData("DistIntake2", dI3);
+            telemetry.addData("DistIntake3", dI4);
+            telemetry.addData("tempo: ", timer);
+            telemetry.addData("rpm", shooter.getRPM());
+            telemetry.update();
             telemetry.update();
 
         }

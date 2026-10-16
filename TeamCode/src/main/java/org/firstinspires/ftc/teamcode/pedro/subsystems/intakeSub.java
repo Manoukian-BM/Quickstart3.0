@@ -18,7 +18,6 @@ public class intakeSub {
     teleOpRed redAlliance;
     teleOpBlue blueAlliance;
 
-    double i = 0;
     public enum EstadoIntake {
         IDLE, COLETANDO, CARREGADO, EXPELIR
     }

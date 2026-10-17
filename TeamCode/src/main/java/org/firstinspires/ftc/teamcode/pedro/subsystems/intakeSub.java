@@ -34,6 +34,9 @@ public class intakeSub {
 
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         indexer.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        indexer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
     }
 
     public void update(Gamepad gamepad1, Gamepad gamepad2, boolean shooterAtivo,
@@ -55,7 +58,6 @@ public class intakeSub {
 
         switch (estadoAtual) {
             case IDLE:
-                servoIntk.setPosition(1.0);
                 intake.setPower(0);
                 //indexer.setPower(0);
                 if (!shooterAtivo) {
@@ -65,7 +67,11 @@ public class intakeSub {
 
             case COLETANDO:
                     intake.setPower(-1.0);
-                    indexer.setPower(-0.2);
+                    if (distIntake4Val < 4.2) {
+                        indexer.setPower(-1);
+                    } else {
+                        indexer.setPower(0);
+                    }
                 break;
 
             case EXPELIR:
@@ -76,8 +82,6 @@ public class intakeSub {
             case CARREGADO:
                 gamepad2.rumble(200);
                 gamepad1.rumble(200);
-
-                servoIntk.setPosition(0.65);
 
                 if (shooterAtivo) {
                     intake.setPower(-1.0);

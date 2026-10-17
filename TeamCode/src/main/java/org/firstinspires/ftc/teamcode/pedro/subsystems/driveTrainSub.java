@@ -30,6 +30,11 @@ public class driveTrainSub {
         roda2.setDirection(DcMotor.Direction.REVERSE);
         roda3.setDirection(DcMotor.Direction.FORWARD);
 
+        roda0.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        roda1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        roda2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        roda3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         /*try {
             limelight3A = hardwareMap.get(Limelight3A.class, "limelight3A");
             limelight3A.setPollRateHz(90);

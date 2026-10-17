@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.pedro;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -13,6 +15,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 // Subsistemas
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedro.subsystems.servoSub;
 import org.firstinspires.ftc.teamcode.pedro.subsystems.turretOdo;
@@ -41,6 +44,8 @@ public class teleOpBlue extends LinearOpMode {
 
     private static final int[] TARGET_IDS = {42, 43, 44, 45};
     private static final int[] TARGET_ID2 = {38, 39, 40, 41};
+
+    private GoBildaPinpointDriver pinpoint;
 
     private long holdStartTime = 0;
     private boolean pathIniciado = false;
@@ -88,6 +93,8 @@ public class teleOpBlue extends LinearOpMode {
         distIntake3 = hardwareMap.get(DistanceSensor.class, "distIntake3");
         distIntake4 = hardwareMap.get(DistanceSensor.class, "distIntake4");
 
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+
         servoAR = hardwareMap.get(Servo.class, "servoAR");
         servoAL = hardwareMap.get(Servo.class, "servoAL");
 
@@ -112,6 +119,8 @@ public class teleOpBlue extends LinearOpMode {
         servoAL.setPosition(0.6);
 
         while (opModeIsActive()) {
+
+            pinpoint.update();
 
             double dI1 = distIntake1.getDistance(DistanceUnit.CM);
             double dI2 = distIntake2.getDistance(DistanceUnit.CM);
@@ -177,9 +186,12 @@ public class teleOpBlue extends LinearOpMode {
 //            telemetry.addData("Posição do servo", turret.getServoPosition());
 //            telemetry.addData("Follower ocupado", follower.isBusy());
                 telemetry.addData("DistIntake1", dI1);
-                telemetry.addData("DistIntake1", dI2);
-                telemetry.addData("DistIntake2", dI3);
-                telemetry.addData("DistIntake3", dI4);
+                telemetry.addData("DistIntake2", dI2);
+                telemetry.addData("DistIntake3", dI3);
+                telemetry.addData("DistIntake4", dI4);
+            telemetry.addData("X", pinpoint.getEncoderX());
+            telemetry.addData("Y", pinpoint.getEncoderY());
+            telemetry.addData("Ang", pinpoint.getHeading(AngleUnit.DEGREES));
                 telemetry.addData("tempo: ", timer);
                 telemetry.addData("rpm", shooter.getRPM());
                 telemetry.update();

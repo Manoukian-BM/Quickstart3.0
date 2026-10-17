@@ -13,6 +13,7 @@ public class servoSub {
     private final Servo servoAR;
     private final Servo servoAL;
     private final Servo servoR, servoL;
+    private final Servo servoIntk;
 
     private RevColorSensorV3 distIntake4; // I2C 03 control
 
@@ -26,6 +27,7 @@ public class servoSub {
 
         turretAjustR = hardwareMap.get(Servo.class, "turretAjustR");
         turretAjustL = hardwareMap.get(Servo.class, "turretAjustL");
+        servoIntk = hardwareMap.get(Servo.class, "servoIntk");
         servoAR = hardwareMap.get(Servo.class, "servoAR");
         servoAL = hardwareMap.get(Servo.class, "servoAL");
         servoR = hardwareMap.get(Servo.class, "servoR");
@@ -60,6 +62,12 @@ public class servoSub {
 
             servoAR.setPosition(position);
             servoAL.setPosition(position);
+        }
+
+        if (gamepad2.dpad_up) {
+            servoIntk.setPosition(1.0);
+        } else if (gamepad2.dpad_down) {
+            servoIntk.setPosition(0.65);
         }
 
 //        if (nectar) {

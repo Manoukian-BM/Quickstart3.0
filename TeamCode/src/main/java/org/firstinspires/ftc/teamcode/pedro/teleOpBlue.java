@@ -81,10 +81,12 @@ public class teleOpBlue extends LinearOpMode {
             follower.update();
             Pose currentPose = follower.pose();
 
+            double distanciaHive = turret.getDist();
+
             servo.update(gamepad1, gamepad2, shooter.tiroPolen(), shooter.tiroPolen());
             intake.update(gamepad1, gamepad2, shooter.isAtirando(), dI1, dI2, dI3, dI4);
-            shooter.update(gamepad1, gamepad2, 10,
-                    intake.isColetando(), intake.isCuspindo());
+            shooter.update(gamepad1, gamepad2, 10, intake.isColetando(),
+                    intake.isCuspindo(), distanciaHive);
             turret.update(gamepad1, gamepad2);
             drive.teleopUpdate(gamepad1, gamepad2);
 

@@ -9,10 +9,9 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-
+import com.pedropathing.follower.Follower;
 
 public class shooterSub {
-
     private final DcMotorEx lshooter;
     private final DcMotorEx rshooter;
     private final DcMotorEx indexer;
@@ -62,7 +61,9 @@ public class shooterSub {
         indexer.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 
-    public void update(Gamepad gamepad, Gamepad gamepad2, double dist, boolean intakeColetando, boolean intakeCuspindo) {
+    public void update(Gamepad gamepad, Gamepad gamepad2, double dist,
+                       boolean intakeColetando, boolean intakeCuspindo,
+                        double distanciaHIVE) {
         double time = System.currentTimeMillis();
 
         if (gamepad2.right_trigger > 0.2) {
@@ -87,7 +88,7 @@ public class shooterSub {
 
             case POLEN:
                 shootTime = System.currentTimeMillis();
-                targetRPM = 1830;
+                targetRPM = distanciaHIVE / 0.0294114286;
 
                 rpmR = (Math.abs(rshooter.getVelocity() / 28) * 60.0);
                 error = targetRPM - rpmR;
@@ -97,13 +98,13 @@ public class shooterSub {
                 rshooter.setPower(-power);
                 lshooter.setPower(-power);
                 turretAjustL.setPosition(0.1);
-                turretAjustR.setPosition(0.15);
+                turretAjustR.setPosition(0.12);
                 servoR.setPosition(0.2);
-                servoL.setPosition(0.47);
+                servoL.setPosition(0.43);
                 if (rpmAtual >= targetRPM) {
 
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-                        indexer.setPower(-1);
+                        indexer.setPower(-0.45);
                         intake.setPower(-1);
                     }
                 }
@@ -111,23 +112,23 @@ public class shooterSub {
 
             case NECTAR:
                 shootTime = System.currentTimeMillis();
-                targetRPM = 1840;
+                targetRPM = distanciaHIVE / 0.0272328042;
                 rpmR = (Math.abs(rshooter.getVelocity() / 28) * 60.0);
                 error = targetRPM - rpmR;
-                correction = error * 0.0085;
+                correction = error * 0.009;
                 turretAjustR.setPosition(0.50);
+                turretAjustL.setPosition(0.3);
                 power = 0.5 + correction;
                 power = Math.max(0, Math.min(power,1));
                 rshooter.setPower(-power);
                 lshooter.setPower(-power);
-                turretAjustL.setPosition(0.3);
 
                 servoR.setPosition(0.2);
                 servoL.setPosition(0.47);
                 if (rpmAtual >= targetRPM) {
 
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-                        indexer.setPower(-1);
+                        indexer.setPower(-0.85);
                         intake.setPower(-1);
                     }
                 }

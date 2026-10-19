@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.pedro.subsystems;
 
-import com.qualcomm.robotcore.hardware.ColorSensor;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -37,20 +35,9 @@ public class servoSub {
     }
 
     public void update(Gamepad gamepad, Gamepad gamepad2, boolean polen, boolean nectar) {
-        double blue = distIntake4.blue();
-        double red = distIntake4.red();
-        double green = distIntake4.green();
 
         servoAR.setPosition(0);
         servoAL.setPosition(0);
-
-//        if (shooting) {
-//
-//            if (blue > 200 || red > 200) {
-//                turretAjustR.setPosition(0.25);
-//                turretAjustL.setPosition(0.25);
-//            }
-//        } else {
             if (gamepad.b && !previousB) {
                 nectar = !nectar;
                 double position = nectar ? 0.3 : 0.1;

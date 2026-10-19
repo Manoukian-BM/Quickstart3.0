@@ -27,7 +27,7 @@ public class turretOdo {
     private double targetY;
     private double servoPosition = CENTRO;
     private double angleDegrees;
-    private double distSelected;
+    private static double distSelected;
     private double leftHiveDistance;
     private double rightHiveDistance;
     private double manualPosition = CENTRO;
@@ -86,25 +86,27 @@ public class turretOdo {
         }
 
         Pose pose = follower.pose();
-        selecionarHive(pose);
-        if (!hasTarget) {
-            return;
+        if (gamepad2.left_bumper) {
+            selecionarHive(pose);
+            if (!hasTarget) {
+                return;
+            }
+
+            double angle = Math.atan2(targetY - pose.y(), targetX - pose.x()) - pose.heading();
+            angle = Math.atan2(Math.sin(angle), Math.cos(angle));
+            angleDegrees = Math.toDegrees(angle);
+
+            double limitedAngle = clamp(
+                    SERVO_DIRECTION * angleDegrees,
+                    -MAX_ANGLE_DEGREES,
+                    MAX_ANGLE_DEGREES);
+            servoPosition = clamp(
+                    CENTRO + limitedAngle / SERVO_RANGE_DEGREES,
+                    0.0,
+                    1.0);
+            manualPosition = servoPosition;
+            turret.setPosition(servoPosition);
         }
-
-        double angle = Math.atan2(targetY - pose.y(), targetX - pose.x()) - pose.heading();
-        angle = Math.atan2(Math.sin(angle), Math.cos(angle));
-        angleDegrees = Math.toDegrees(angle);
-
-        double limitedAngle = clamp(
-                SERVO_DIRECTION * angleDegrees,
-                -MAX_ANGLE_DEGREES,
-                MAX_ANGLE_DEGREES);
-        servoPosition = clamp(
-                CENTRO + limitedAngle / SERVO_RANGE_DEGREES,
-                0.0,
-                1.0);
-        manualPosition = servoPosition;
-        turret.setPosition(servoPosition);
     }
 
     private void updateManual(Gamepad gamepad) {
@@ -126,7 +128,7 @@ public class turretOdo {
         turret.setPosition(servoPosition);
     }
 
-    private static double distance(double x1, double y1, double x2, double y2) {
+    public static double distance(double x1, double y1, double x2, double y2) {
         return Math.hypot(x2 - x1, y2 - y1);
     }
 
@@ -138,7 +140,7 @@ public class turretOdo {
         return selectedHive;
     }
 
-    public double getDist() {
+    public static double getDist() {
         return distSelected;
     }
 

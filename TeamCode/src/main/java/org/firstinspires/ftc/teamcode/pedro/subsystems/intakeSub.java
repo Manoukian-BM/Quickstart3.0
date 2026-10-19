@@ -45,6 +45,8 @@ public class intakeSub {
 
         recemCarregado = false;
 
+
+
         if (gamepad1.square) {
             estadoAtual = EstadoIntake.EXPELIR;
         } else if ((gamepad1.right_trigger > 0.2) || (gamepad1.left_trigger > 0.2)) {
@@ -70,7 +72,9 @@ public class intakeSub {
                 break;
 
             case COLETANDO:
-                    intake.setPower(-1.0);
+                if (distIntake4Val > 3) {
+                    intake.setPower(-0.6);
+                    }
                     indexer.setPower(-0.6);
                 break;
 

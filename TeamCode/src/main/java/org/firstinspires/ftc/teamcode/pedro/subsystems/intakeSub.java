@@ -19,7 +19,7 @@ public class intakeSub {
     teleOpBlue blueAlliance;
 
     public enum EstadoIntake {
-        IDLE, COLETANDO, CARREGADO, EXPELIR
+        IDLE, COLETANDO, CARREGADO, EXPELIR,
     }
     private EstadoIntake estadoAtual = EstadoIntake.IDLE;
     private boolean recemCarregado = false;
@@ -67,11 +67,7 @@ public class intakeSub {
 
             case COLETANDO:
                     intake.setPower(-1.0);
-                    if (distIntake4Val < 4.2) {
-                        indexer.setPower(-1);
-                    } else {
-                        indexer.setPower(0);
-                    }
+                    indexer.setPower(-0.6);
                 break;
 
             case EXPELIR:
@@ -82,6 +78,7 @@ public class intakeSub {
             case CARREGADO:
                 gamepad2.rumble(200);
                 gamepad1.rumble(200);
+
 
                 if (shooterAtivo) {
                     intake.setPower(-1.0);

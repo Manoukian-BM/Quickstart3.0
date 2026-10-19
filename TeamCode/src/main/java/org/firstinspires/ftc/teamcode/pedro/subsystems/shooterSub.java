@@ -80,7 +80,7 @@ public class shooterSub {
             case IDLE:
                 lshooter.setPower(-0.1);
                 rshooter.setPower(-0.1);
-                servoR.setPosition(0.32);
+                servoR.setPosition(0.47);
                 servoL.setPosition(0.32);
                 shooterReady = false;
                 break;
@@ -112,7 +112,7 @@ public class shooterSub {
 //                turretAjustR.setPosition(0.15);
 
                 if (rpmAtual >= targetRPM) {
-                    servoR.setPosition(0.47);
+                    servoR.setPosition(0.2);
                     servoL.setPosition(0.47);
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
                         indexer.setPower(-1);
@@ -135,7 +135,7 @@ public class shooterSub {
                 turretAjustR.setPosition(0.35);
 
                 if (rpmAtual >= targetRPM) {
-                    servoR.setPosition(0.47);
+                    servoR.setPosition(0.2);
                     servoL.setPosition(0.47);
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
                         indexer.setPower(-1);

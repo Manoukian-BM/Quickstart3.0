@@ -41,6 +41,9 @@ public class servoSub {
         double red = distIntake4.red();
         double green = distIntake4.green();
 
+        servoAR.setPosition(0);
+        servoAL.setPosition(0);
+
 //        if (shooting) {
 //
 //            if (blue > 200 || red > 200) {
@@ -64,6 +67,7 @@ public class servoSub {
             servoAL.setPosition(position);
         }
 
+
         if (gamepad2.dpad_up) {
             servoIntk.setPosition(1.0);
         } else if (gamepad2.dpad_down) {
@@ -82,4 +86,3 @@ public class servoSub {
         previousB = gamepad.b;
     }
 }
-//67

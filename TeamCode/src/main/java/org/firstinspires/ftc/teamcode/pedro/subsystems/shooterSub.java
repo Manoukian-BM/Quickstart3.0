@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import kotlin.time.Clock;
+
 
 public class shooterSub {
 
@@ -98,22 +98,10 @@ public class shooterSub {
                 lshooter.setPower(-power);
                 turretAjustL.setPosition(0.1);
                 turretAjustR.setPosition(0.15);
-
-//                targetRPM = dist * 0.0218579234;
-//
-//                rpmR = (Math.abs(rshooter.getVelocity() / 28) * 60.0);
-//                error = targetRPM - rpmR;
-//                correction = error * 0.0085;
-//                power = 1 + correction;
-//                power = Math.max(0, Math.min(power,1));
-//                rshooter.setPower(-power);
-//                lshooter.setPower(-power);
-//                turretAjustL.setPosition(0.1);
-//                turretAjustR.setPosition(0.15);
-
+                servoR.setPosition(0.2);
+                servoL.setPosition(0.47);
                 if (rpmAtual >= targetRPM) {
-                    servoR.setPosition(0.2);
-                    servoL.setPosition(0.47);
+
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
                         indexer.setPower(-1);
                         intake.setPower(-1);
@@ -127,16 +115,17 @@ public class shooterSub {
                 rpmR = (Math.abs(rshooter.getVelocity() / 28) * 60.0);
                 error = targetRPM - rpmR;
                 correction = error * 0.0085;
+                turretAjustR.setPosition(0.50);
                 power = 0.5 + correction;
                 power = Math.max(0, Math.min(power,1));
                 rshooter.setPower(-power);
                 lshooter.setPower(-power);
                 turretAjustL.setPosition(0.3);
-                turretAjustR.setPosition(0.35);
 
+                servoR.setPosition(0.2);
+                servoL.setPosition(0.47);
                 if (rpmAtual >= targetRPM) {
-                    servoR.setPosition(0.2);
-                    servoL.setPosition(0.47);
+
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
                         indexer.setPower(-1);
                         intake.setPower(-1);

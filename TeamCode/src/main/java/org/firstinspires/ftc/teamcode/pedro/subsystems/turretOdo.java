@@ -15,7 +15,7 @@ public class turretOdo {
 
     private static final double CENTRO = 0.5;
     private static final double MAX_ANGLE_DEGREES = 180.0;
-    private static final double SERVO_RANGE_DEGREES = 300.0;
+    private static final double SERVO_RANGE_DEGREES = 360.0;
     private static final double SERVO_DIRECTION = 1.0;
     private static final double MANUAL_SERVO_RATE = 0.5;
 
@@ -52,9 +52,9 @@ public class turretOdo {
 
     private void selecionarHive(Pose pose) {
         double leftHiveX = 84.0;
-        double leftHiveY = 56.0;
+        double leftHiveY = 47.0;
         double rightHiveX = 84.0;
-        double rightHiveY = 86.0;
+        double rightHiveY = 94.0;
 
         leftHiveDistance = distance(pose.x(), pose.y(), leftHiveX, leftHiveY);
         rightHiveDistance = distance(pose.x(), pose.y(), rightHiveX, rightHiveY);

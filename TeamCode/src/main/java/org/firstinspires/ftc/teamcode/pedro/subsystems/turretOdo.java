@@ -52,9 +52,9 @@ public class turretOdo {
 
     private void selecionarHive(Pose pose) {
         double leftHiveX = 84.0;
-        double leftHiveY = 47.0;
+        double leftHiveY = 54.0;
         double rightHiveX = 84.0;
-        double rightHiveY = 94.0;
+        double rightHiveY = 91.0;
 
         leftHiveDistance = distance(pose.x(), pose.y(), leftHiveX, leftHiveY);
         rightHiveDistance = distance(pose.x(), pose.y(), rightHiveX, rightHiveY);

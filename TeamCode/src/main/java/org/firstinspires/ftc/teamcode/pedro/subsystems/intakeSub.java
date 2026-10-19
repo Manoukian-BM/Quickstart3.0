@@ -45,15 +45,19 @@ public class intakeSub {
 
         recemCarregado = false;
 
-        if (gamepad2.left_bumper || gamepad1.left_trigger > 0.2) {
+        if (gamepad1.square) {
             estadoAtual = EstadoIntake.EXPELIR;
-        } else if ((gamepad1.right_trigger > 0.2)) {
+        } else if ((gamepad1.right_trigger > 0.2) || (gamepad1.left_trigger > 0.2)) {
             estadoAtual = EstadoIntake.COLETANDO;
         } else if (distIntake1Val < 4.2 && distIntake2Val < 2
                     && distIntake3Val < 3.5 && distIntake4Val < 3.5) {
             estadoAtual = EstadoIntake.CARREGADO;
         } else {
             estadoAtual = EstadoIntake.IDLE;
+        }
+
+        if (gamepad1.right_trigger > 0.2 && estadoAtual == EstadoIntake.IDLE) {
+            servoIntk.setPosition(0.65);
         }
 
         switch (estadoAtual) {

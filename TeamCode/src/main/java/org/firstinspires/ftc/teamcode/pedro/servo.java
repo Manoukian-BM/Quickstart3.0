@@ -50,6 +50,9 @@ public class servo extends LinearOpMode {
 
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
+        servoAR.setPosition(0.6);
+        servoAL.setPosition(0.6);
+
         telemetry.addLine("TeleOp pronto.");
         telemetry.update();
 

@@ -112,15 +112,22 @@ public class turretOdo {
         return -1;
     }
 
-    private void alinharPelaLimelight(double tx) {
-        angleDegrees = tx;
+    private static final double LIMELIGHT_GAIN = 0.15;
+    private static final double LIMELIGHT_DEADBAND_DEGREES = 1.0;
+    private static final double MAX_SERVO_STEP = 0.002;
 
-        // Tx é o erro horizontal em graus. Ajuste o sinal conforme a direção real do servo.
-        servoPosition = clamp(
-                servoPosition - SERVO_DIRECTION * tx / SERVO_RANGE_DEGREES,
-                0.0,
-                1.0);
-//comit
+    private void alinharPelaLimelight(double tx) {
+        if (Math.abs(tx) < LIMELIGHT_DEADBAND_DEGREES) {
+            return;
+        }
+
+        double correction = -SERVO_DIRECTION
+                * tx / SERVO_RANGE_DEGREES
+                * LIMELIGHT_GAIN;
+
+        correction = clamp(correction, -MAX_SERVO_STEP, MAX_SERVO_STEP);
+
+        servoPosition = clamp(servoPosition + correction, 0.0, 1.0);
         manualPosition = servoPosition;
         turret.setPosition(servoPosition);
     }

@@ -42,8 +42,8 @@ public class auto4p2h extends OpMode {
 
     @Override
     public void init() {
-        lshooter = hardwareMap.get(DcMotorEx.class, "lshooter");
-        rshooter = hardwareMap.get(DcMotorEx.class, "rshooter");
+        lshooter = hardwareMap.get(DcMotorEx.class, "shooterL");
+        rshooter = hardwareMap.get(DcMotorEx.class, "shooterR");
         intake = hardwareMap.get(DcMotor.class, "intake");
         indexer = hardwareMap.get(DcMotor.class, "indexer");
         servoR = hardwareMap.get(Servo.class, "servoR");

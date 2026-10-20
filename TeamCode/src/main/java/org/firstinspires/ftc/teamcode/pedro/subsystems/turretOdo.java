@@ -121,7 +121,7 @@ public class turretOdo {
             return;
         }
 
-        double correction = -SERVO_DIRECTION
+        double correction = - SERVO_DIRECTION
                 * tx / SERVO_RANGE_DEGREES
                 * LIMELIGHT_GAIN;
 

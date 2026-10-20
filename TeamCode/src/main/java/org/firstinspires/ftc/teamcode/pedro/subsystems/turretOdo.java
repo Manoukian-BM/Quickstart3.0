@@ -1,10 +1,15 @@
 package org.firstinspires.ftc.teamcode.pedro.subsystems;
 
+import static com.pedropathing.math.Pose.interpolate;
+
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 public class turretOdo {
 
@@ -12,6 +17,8 @@ public class turretOdo {
         MANUAL,
         AUTOMATICO
     }
+
+    Pose upperPose = new Pose(0.0, 0.0, 50.0);
 
     private static final double CENTRO = 0.5;
     private static final double MAX_ANGLE_DEGREES = 180.0;
@@ -21,6 +28,7 @@ public class turretOdo {
 
     private final Follower follower;
     private final Servo turret;
+    //private Limelight3A limelight;
 
     private EstadoTurret estadoAtual = EstadoTurret.AUTOMATICO;
     private double targetX;
@@ -42,8 +50,12 @@ public class turretOdo {
         }
         this.follower = follower;
         turret = hardwareMap.get(Servo.class, "turret");
+        //Limelight3A limelight = hardwareMap.get(Limelight3A.class, "limelight");
         turret.setPosition(CENTRO);
         previousUpdateNanos = System.nanoTime();
+
+        //limelight.pipelineSwitch(1);
+        //limelight.start();
     }
 
     public void selecionarHive() {
@@ -51,13 +63,16 @@ public class turretOdo {
     }
 
     private void selecionarHive(Pose pose) {
-        double leftHiveX = 84.0;
+        double ratio = clamp(pose.x() / 50.0, -0.6, 0.6);
+
+        double leftHiveX = 84.0 - ratio;
         double leftHiveY = 54.0;
-        double rightHiveX = 84.0;
+        double rightHiveX = 81.0 - ratio;
         double rightHiveY = 91.0;
 
         leftHiveDistance = distance(pose.x(), pose.y(), leftHiveX, leftHiveY);
         rightHiveDistance = distance(pose.x(), pose.y(), rightHiveX, rightHiveY);
+
         if (pose.y() < 72.0) {
             targetX = leftHiveX;
             targetY = leftHiveY;
@@ -69,10 +84,12 @@ public class turretOdo {
             selectedHive = "Direita";
             distSelected = rightHiveDistance;
         }
+
         hasTarget = true;
     }
 
     public void update(Gamepad gamepad, Gamepad gamepad2) {
+        //LLResult result = limelight.getLatestResult();
         if (gamepad2.y && !previousY) {
             estadoAtual = estadoAtual == EstadoTurret.MANUAL
                     ? EstadoTurret.AUTOMATICO
@@ -87,25 +104,29 @@ public class turretOdo {
 
         Pose pose = follower.pose();
         if (gamepad2.left_bumper) {
-            selecionarHive(pose);
-            if (!hasTarget) {
-                return;
-            }
+//            if (!result.isValid() && result != null) {
+//                //a lógica da limelight entra aqui
+//            } else {
+                selecionarHive(pose);
+                if (!hasTarget) {
+                    return;
+                }
 
-            double angle = Math.atan2(targetY - pose.y(), targetX - pose.x()) - pose.heading();
-            angle = Math.atan2(Math.sin(angle), Math.cos(angle));
-            angleDegrees = Math.toDegrees(angle);
+                double angle = Math.atan2(targetY - pose.y(), targetX - pose.x()) - pose.heading();
+                angle = Math.atan2(Math.sin(angle), Math.cos(angle));
+                angleDegrees = Math.toDegrees(angle);
 
-            double limitedAngle = clamp(
-                    SERVO_DIRECTION * angleDegrees,
-                    -MAX_ANGLE_DEGREES,
-                    MAX_ANGLE_DEGREES);
-            servoPosition = clamp(
-                    CENTRO + limitedAngle / SERVO_RANGE_DEGREES,
-                    0.0,
-                    1.0);
-            manualPosition = servoPosition;
-            turret.setPosition(servoPosition);
+                double limitedAngle = clamp(
+                        SERVO_DIRECTION * angleDegrees,
+                        -MAX_ANGLE_DEGREES,
+                        MAX_ANGLE_DEGREES);
+                servoPosition = clamp(
+                        CENTRO + limitedAngle / SERVO_RANGE_DEGREES,
+                        0.0,
+                        1.0);
+                manualPosition = servoPosition;
+                turret.setPosition(servoPosition);
+            //}
         }
     }
 

@@ -72,15 +72,13 @@ public class intakeSub {
                 break;
 
             case COLETANDO:
-                if (distIntake4Val > 3) {
-                    intake.setPower(-0.6);
-                    }
                     indexer.setPower(-0.6);
+                    intake.setPower(-0.6);
                 break;
 
             case EXPELIR:
-                intake.setPower(1.0);
-                indexer.setPower(1.0);
+                indexer.setPower(0.6);
+                intake.setPower(0.6);
                 break;
 
             case CARREGADO:

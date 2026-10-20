@@ -16,7 +16,7 @@ public class shooterSub {
     private final DcMotorEx rshooter;
     private final DcMotorEx indexer;
     private final DcMotor intake;
-    private final Servo servoR, servoL;
+    private final Servo servoR;
     private final Servo turretAjustR, turretAjustL;
     private final ColorRangeSensor distIntake4; // I2C 03 control
     double VelRPM = 0;
@@ -49,7 +49,6 @@ public class shooterSub {
         intake = hardwareMap.get(DcMotor.class, "intake");
 
         servoR = hardwareMap.get(Servo.class, "servoR");
-        servoL = hardwareMap.get(Servo.class, "servoL");
 
         indexer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lshooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -82,13 +81,12 @@ public class shooterSub {
                 lshooter.setPower(-0.1);
                 rshooter.setPower(-0.1);
                 servoR.setPosition(0.47);
-                servoL.setPosition(0.32);
                 shooterReady = false;
                 break;
 
             case POLEN:
                 shootTime = System.currentTimeMillis();
-                targetRPM = distanciaHIVE / 0.0294114286;
+                targetRPM = distanciaHIVE * 41.43435066301831;
 
                 rpmR = (Math.abs(rshooter.getVelocity() / 28) * 60.0);
                 error = targetRPM - rpmR;
@@ -100,11 +98,9 @@ public class shooterSub {
                 turretAjustL.setPosition(0.1);
                 turretAjustR.setPosition(0.12);
                 servoR.setPosition(0.2);
-                servoL.setPosition(0.43);
                 if (rpmAtual >= targetRPM) {
-
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-                        indexer.setPower(-0.45);
+                        indexer.setPower(-0.4);
                         intake.setPower(-1);
                     }
                 }
@@ -112,7 +108,7 @@ public class shooterSub {
 
             case NECTAR:
                 shootTime = System.currentTimeMillis();
-                targetRPM = distanciaHIVE / 0.0272328042;
+                targetRPM = distanciaHIVE * 43.19158071984845;
                 rpmR = (Math.abs(rshooter.getVelocity() / 28) * 60.0);
                 error = targetRPM - rpmR;
                 correction = error * 0.009;
@@ -124,7 +120,6 @@ public class shooterSub {
                 lshooter.setPower(-power);
 
                 servoR.setPosition(0.2);
-                servoL.setPosition(0.47);
                 if (rpmAtual >= targetRPM) {
 
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {

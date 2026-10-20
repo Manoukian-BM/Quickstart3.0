@@ -10,7 +10,7 @@ public class servoSub {
     private final Servo turretAjustR, turretAjustL;
     private final Servo servoAR;
     private final Servo servoAL;
-    private final Servo servoR, servoL;
+    private final Servo servoR;
     private final Servo servoIntk;
 
     private RevColorSensorV3 distIntake4; // I2C 03 control
@@ -29,15 +29,12 @@ public class servoSub {
         servoAR = hardwareMap.get(Servo.class, "servoAR");
         servoAL = hardwareMap.get(Servo.class, "servoAL");
         servoR = hardwareMap.get(Servo.class, "servoR");
-        servoL = hardwareMap.get(Servo.class, "servoL");
 
         distIntake4 = hardwareMap.get(RevColorSensorV3.class, "distIntake4");
     }
 
     public void update(Gamepad gamepad, Gamepad gamepad2, boolean polen, boolean nectar) {
 
-        servoAR.setPosition(0);
-        servoAL.setPosition(0);
             if (gamepad.b && !previousB) {
                 nectar = !nectar;
                 double position = nectar ? 0.3 : 0.1;
@@ -46,9 +43,9 @@ public class servoSub {
                 turretAjustR.setPosition(position + 0.03);
             }
 
-        if (gamepad2.a && previousA) {
+        if (gamepad2.a && !previousA) {
             flower = !flower;
-            double position = flower ? 0.7 : 0.6; // 1 pra trás, 0.5 pra frente
+            double position = flower ? 0.8 : 0.6; // 1 para trás, 0.5 para frente
 
             servoAR.setPosition(position);
             servoAL.setPosition(position);
@@ -60,14 +57,6 @@ public class servoSub {
         } else if (gamepad2.dpad_down) {
             servoIntk.setPosition(0.65);
         }
-
-//        if (nectar) {
-//            servoR.setPosition(0.32);
-//            servoL.setPosition(0.32);
-//        } else if (polen) {
-//            servoR.setPosition(0.47);
-//            servoL.setPosition(0.47);
-//        }
 
         previousA = gamepad2.a;
         previousB = gamepad.b;

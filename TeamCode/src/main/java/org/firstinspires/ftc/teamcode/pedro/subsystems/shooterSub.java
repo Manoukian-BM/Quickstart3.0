@@ -112,7 +112,7 @@ public class shooterSub {
                 rpmR = (Math.abs(rshooter.getVelocity() / 28) * 60.0);
                 error = targetRPM - rpmR;
                 correction = error * 0.009;
-                turretAjustR.setPosition(0.50);
+                turretAjustR.setPosition(0.5);
                 turretAjustL.setPosition(0.3);
                 power = 0.5 + correction;
                 power = Math.max(0, Math.min(power,1));

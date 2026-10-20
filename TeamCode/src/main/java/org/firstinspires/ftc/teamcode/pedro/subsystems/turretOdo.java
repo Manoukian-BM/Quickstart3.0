@@ -10,6 +10,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import java.util.List;
 
 public class turretOdo {
 
@@ -28,7 +30,7 @@ public class turretOdo {
 
     private final Follower follower;
     private final Servo turret;
-    //private Limelight3A limelight;
+    private Limelight3A limelight;
 
     private EstadoTurret estadoAtual = EstadoTurret.AUTOMATICO;
     private double targetX;
@@ -50,12 +52,14 @@ public class turretOdo {
         }
         this.follower = follower;
         turret = hardwareMap.get(Servo.class, "turret");
-        //Limelight3A limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        this.limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        this.limelight.pipelineSwitch(1);
+        this.limelight.start();
         turret.setPosition(CENTRO);
         previousUpdateNanos = System.nanoTime();
 
-        //limelight.pipelineSwitch(1);
-        //limelight.start();
+        limelight.pipelineSwitch(1);
+        limelight.start();
     }
 
     public void selecionarHive() {
@@ -63,11 +67,11 @@ public class turretOdo {
     }
 
     private void selecionarHive(Pose pose) {
-        double ratio = clamp(pose.x() / 50.0, -0.6, 0.6);
+        double ratio = clamp(pose.x() / 100.0, -0.6, 0.6);
 
         double leftHiveX = 84.0 - ratio;
         double leftHiveY = 54.0;
-        double rightHiveX = 81.0 - ratio;
+        double rightHiveX = 84.0 - ratio;
         double rightHiveY = 91.0;
 
         leftHiveDistance = distance(pose.x(), pose.y(), leftHiveX, leftHiveY);
@@ -88,8 +92,62 @@ public class turretOdo {
         hasTarget = true;
     }
 
+    private int getVisibleHiveTagId(LLResult result) {
+        if (result == null || !result.isValid()) {
+            return -1;
+        }
+
+        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+        if (fiducials == null) {
+            return -1;
+        }
+
+        for (LLResultTypes.FiducialResult fiducial : fiducials) {
+            int id = fiducial.getFiducialId();
+            if (id >= 38 && id <= 45) {
+                return id;
+            }
+        }
+
+        return -1;
+    }
+
+    private void alinharPelaLimelight(double tx) {
+        angleDegrees = tx;
+
+        // Tx é o erro horizontal em graus. Ajuste o sinal conforme a direção real do servo.
+        servoPosition = clamp(
+                servoPosition - SERVO_DIRECTION * tx / SERVO_RANGE_DEGREES,
+                0.0,
+                1.0);
+
+        manualPosition = servoPosition;
+        turret.setPosition(servoPosition);
+    }
+
+    private void alinharPelaOdometria(Pose pose) {
+        selecionarHive(pose);
+
+        double angle = Math.atan2(targetY - pose.y(), targetX - pose.x()) - pose.heading();
+        angle = Math.atan2(Math.sin(angle), Math.cos(angle));
+        angleDegrees = Math.toDegrees(angle);
+
+        double limitedAngle = clamp(
+                SERVO_DIRECTION * angleDegrees,
+                -MAX_ANGLE_DEGREES,
+                MAX_ANGLE_DEGREES);
+
+        servoPosition = clamp(
+                CENTRO + limitedAngle / SERVO_RANGE_DEGREES,
+                0.0,
+                1.0);
+
+        manualPosition = servoPosition;
+        turret.setPosition(servoPosition);
+    }
+
     public void update(Gamepad gamepad, Gamepad gamepad2) {
-        //LLResult result = limelight.getLatestResult();
+        LLResult result = limelight.getLatestResult();
         if (gamepad2.y && !previousY) {
             estadoAtual = estadoAtual == EstadoTurret.MANUAL
                     ? EstadoTurret.AUTOMATICO
@@ -104,29 +162,14 @@ public class turretOdo {
 
         Pose pose = follower.pose();
         if (gamepad2.left_bumper) {
-//            if (!result.isValid() && result != null) {
-//                //a lógica da limelight entra aqui
-//            } else {
-                selecionarHive(pose);
-                if (!hasTarget) {
-                    return;
-                }
+            int tagId = getVisibleHiveTagId(result);
 
-                double angle = Math.atan2(targetY - pose.y(), targetX - pose.x()) - pose.heading();
-                angle = Math.atan2(Math.sin(angle), Math.cos(angle));
-                angleDegrees = Math.toDegrees(angle);
-
-                double limitedAngle = clamp(
-                        SERVO_DIRECTION * angleDegrees,
-                        -MAX_ANGLE_DEGREES,
-                        MAX_ANGLE_DEGREES);
-                servoPosition = clamp(
-                        CENTRO + limitedAngle / SERVO_RANGE_DEGREES,
-                        0.0,
-                        1.0);
-                manualPosition = servoPosition;
-                turret.setPosition(servoPosition);
-            //}
+            if (tagId >= 38 && tagId <= 45) {
+                selectedHive = tagId <= 41 ? "Esquerda" : "Direita";
+                alinharPelaLimelight(result.getTx());
+            } else {
+                alinharPelaOdometria(pose);
+            }
         }
     }
 

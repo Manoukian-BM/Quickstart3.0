@@ -66,16 +66,19 @@ public class intakeSub {
                 if (!shooterAtivo) {
                     indexer.setPower(0);
                 }
+                servoIntk.setPosition(0.65);
                 break;
 
             case COLETANDO:
                     indexer.setPower(-0.6);
                     intake.setPower(-1.0);
+                    servoIntk.setPosition(1.0);
                 break;
 
             case EXPELIR:
                 indexer.setPower(0.6);
                 intake.setPower(0.6);
+                servoIntk.setPosition(0.65);
                 break;
 
             case CARREGADO:

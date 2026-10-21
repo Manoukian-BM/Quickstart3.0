@@ -52,9 +52,9 @@ public class servoSub {
         }
 
 
-        if (gamepad2.dpad_up) {
+        if (gamepad.dpad_up) {
             servoIntk.setPosition(1.0);
-        } else if (gamepad2.dpad_down) {
+        } else if (gamepad.dpad_down) {
             servoIntk.setPosition(0.65);
         }
 

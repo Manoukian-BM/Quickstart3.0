@@ -35,17 +35,17 @@ public class servoSub {
 
     public void update(Gamepad gamepad, Gamepad gamepad2, boolean polen, boolean nectar) {
 
-            if (gamepad.b && !previousB) {
-                nectar = !nectar;
-                double position = nectar ? 0.3 : 0.1;
-
-                turretAjustL.setPosition(position);
-                turretAjustR.setPosition(position + 0.03);
-            }
+//            if (gamepad.b && !previousB) {
+//                nectar = !nectar;
+//                double position = nectar ? 0.3 : 0.1;
+//
+//                turretAjustL.setPosition(position);
+//                turretAjustR.setPosition(position + 0.03);
+//            }
 
         if (gamepad2.a && !previousA) {
             flower = !flower;
-            double position = flower ? 0.8 : 0.6; // 1 para trás, 0.5 para frente
+            double position = flower ? 0.9 : 0.6; // 1 para trás, 0.5 para frente
 
             servoAR.setPosition(position);
             servoAL.setPosition(position);

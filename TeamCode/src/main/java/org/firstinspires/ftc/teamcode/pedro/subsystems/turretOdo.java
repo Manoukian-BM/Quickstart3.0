@@ -88,7 +88,6 @@ public class turretOdo {
             selectedHive = "Direita";
             distSelected = rightHiveDistance;
         }
-
         hasTarget = true;
     }
 
@@ -121,7 +120,7 @@ public class turretOdo {
             return;
         }
 
-        double correction = - SERVO_DIRECTION
+        double correction = + SERVO_DIRECTION
                 * tx / SERVO_RANGE_DEGREES
                 * LIMELIGHT_GAIN;
 
@@ -210,7 +209,6 @@ public class turretOdo {
     public String getSelectedHive() {
         return selectedHive;
     }
-
     public static double getDist() {
         return distSelected;
     }

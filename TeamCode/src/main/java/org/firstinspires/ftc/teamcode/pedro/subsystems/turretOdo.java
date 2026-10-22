@@ -53,7 +53,7 @@ public class turretOdo {
         this.follower = follower;
         turret = hardwareMap.get(Servo.class, "turret");
         this.limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        this.limelight.pipelineSwitch(1);
+        this.limelight.pipelineSwitch(0);
         this.limelight.start();
         turret.setPosition(CENTRO);
         previousUpdateNanos = System.nanoTime();

@@ -45,7 +45,7 @@ public class servoSub {
 
         if (gamepad2.a && !previousA) {
             flower = !flower;
-            double position = flower ? 0.9 : 0.6; // 1 para trás, 0.5 para frente
+            double position = flower ? 0.9 : 0.57; // 1 para trás, 0.5 para frente
 
             servoAR.setPosition(position);
             servoAL.setPosition(position);

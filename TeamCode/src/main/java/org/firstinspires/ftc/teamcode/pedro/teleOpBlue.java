@@ -36,7 +36,7 @@ public class teleOpBlue extends LinearOpMode {
     private DistanceSensor distIntake4;
 
     @Override
-    public void runOpMode() {
+    public void runOpMode() throws InterruptedException {
         follower = Constants.create(hardwareMap);
         if (follower == null) {
             telemetry.addLine("Pedro Pathing Follower nao configurado em Constants.create().");

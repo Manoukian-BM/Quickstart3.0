@@ -14,6 +14,7 @@ public class intakeSub {
 
     private DcMotor intake, indexer;
     private Servo servoIntk;
+    private Servo servoR;
     RevBlinkinLedDriver led;
     teleOpRed redAlliance;
     teleOpBlue blueAlliance;
@@ -29,6 +30,7 @@ public class intakeSub {
 
         intake = hardwareMap.get(DcMotor.class, "intake");
         indexer = hardwareMap.get(DcMotor.class, "indexer");
+        servoR = hardwareMap.get(Servo.class, "servoR");
 
         servoIntk = hardwareMap.get(Servo.class, "servoIntk");
 
@@ -46,7 +48,7 @@ public class intakeSub {
         recemCarregado = false;
         if (gamepad1.square) {
             estadoAtual = EstadoIntake.EXPELIR;
-        } else if ((gamepad1.right_trigger > 0.2) || (gamepad1.left_trigger > 0.2)) {
+        } else if (((gamepad1.right_trigger > 0.2) || (gamepad1.left_trigger > 0.2)) && !shooterAtivo) {
             estadoAtual = EstadoIntake.COLETANDO;
         } else if (distIntake1Val < 4.2 && distIntake2Val < 2
                     && distIntake3Val < 3.5 && distIntake4Val < 3.5) {
@@ -70,15 +72,16 @@ public class intakeSub {
                 break;
 
             case COLETANDO:
-                    indexer.setPower(-0.6);
-                    intake.setPower(-1.0);
-                    servoIntk.setPosition(1.0);
+                if (distIntake4Val < 2);
+                indexer.setPower(-0.6);
+                intake.setPower(-1.0);
+                servoIntk.setPosition(1.0);
                 break;
 
             case EXPELIR:
                 indexer.setPower(0.6);
                 intake.setPower(0.6);
-                servoIntk.setPosition(0.65);
+                servoIntk.setPosition(1.0);
                 break;
 
             case CARREGADO:

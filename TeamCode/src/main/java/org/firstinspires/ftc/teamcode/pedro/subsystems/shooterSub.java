@@ -102,14 +102,14 @@ public class shooterSub {
                 shooterAtirando = false;
                 lshooter.setPower(-0.2);
                 rshooter.setPower(-0.2);
-                servoR.setPosition(0.47);
+                servoR.setPosition(0.3);
                 shooterReady = false;
                 break;
 
             case POLEN:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = 1810;
+                targetRPM = 1800;
 
                 rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
                 error = targetRPM - rpmR;
@@ -119,11 +119,11 @@ public class shooterSub {
                 lshooter.setPower(-power);
                 turretAjustL.setPosition(0.08);
                 turretAjustR.setPosition(0.08);
-                servoR.setPosition(0);
+                servoR.setPosition(0.7);
                 if (rpmAtual >= targetRPM) {
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
                         indexer.setPower(-0.6);
-                        intake.setPower(-0.5);
+                        intake.setPower(-0.6);
                     }
                 }
                 break;
@@ -131,21 +131,21 @@ public class shooterSub {
             case NECTAR:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = 2000;
+                targetRPM = 1980;
 
                 rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
                 error = targetRPM - rpmR;
                 correction = error * 0.0085;
-                power = Math.max(0, Math.min(1 + correction, 1));
+                power = Math.max(0.05, Math.min(1 + correction, 1));
                 rshooter.setPower(-power);
                 lshooter.setPower(-power);
                 turretAjustL.setPosition(0.5);
                 turretAjustR.setPosition(0.29);
-                servoR.setPosition(0);
+                servoR.setPosition(0.7);
                 if (rpmAtual >= targetRPM) {
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-                        indexer.setPower(-1.0);
-                        intake.setPower(-0.8);
+                        indexer.setPower(-0.9);
+                        intake.setPower(-0.9);
                     }
                 }
                 break;

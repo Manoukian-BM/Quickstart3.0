@@ -51,7 +51,7 @@ public class intakeSub {
         } else if (((gamepad1.right_trigger > 0.2) || (gamepad1.left_trigger > 0.2)) && !shooterAtivo) {
             estadoAtual = EstadoIntake.COLETANDO;
         } else if (distIntake1Val < 4.2 && distIntake2Val < 2
-                    && distIntake3Val < 3.5 && distIntake4Val < 3.5) {
+                && distIntake3Val < 3.5 && distIntake4Val < 3.5) {
             estadoAtual = EstadoIntake.CARREGADO;
         } else {
             estadoAtual = EstadoIntake.IDLE;
@@ -68,7 +68,11 @@ public class intakeSub {
                 if (!shooterAtivo) {
                     indexer.setPower(0);
                 }
+                if (!shooterAtivo) {
                 servoIntk.setPosition(0.65);
+                } else {
+                servoIntk.setPosition(1.0);
+                }
                 break;
 
             case COLETANDO:

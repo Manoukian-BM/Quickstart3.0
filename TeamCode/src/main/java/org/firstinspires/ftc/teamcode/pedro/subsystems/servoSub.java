@@ -47,8 +47,9 @@ public class servoSub {
             flower = !flower;
             double position = flower ? 0.9 : 0.57; // 1 para trás, 0.5 para frente
 
-            servoAR.setPosition(position);
-            servoAL.setPosition(position);
+            servoAR.setPosition(position - 0.1
+            );
+            servoAL.setPosition(position + 0.1);
         }
 
 

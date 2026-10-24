@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -32,31 +33,39 @@ public class auto4p2h extends OpMode {
     private Servo servoAR, servoAL;
     private Servo turretAjustR, turretAjustL;
     private Servo turret;
-    private int pathState;
     private Servo servoIntk;
+    private int pathState;
     private DistanceSensor distIntake1;
     private DistanceSensor distIntake2;
     private DistanceSensor distIntake3;
     private DistanceSensor distIntake4;
 
     double rpmAtual = 0;
+    private boolean alimentando = false;
+    private boolean coletando = false;
+    private long inicioAlimentacao;
+    private long inicioAlimentacao2;
+    private long getInicioAlimentacao3;
+    private long inicioColeta;
+    boolean atirando = false;
 
     // --- POSES DO ROBÔ ---
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose startPose = poseFactory.of(58, 9.5, 90);
-    private final Pose scorePose1 = poseFactory.of(58, 16, 90);
-    private final Pose coleta2 = poseFactory.of(21, 47, 180);
+    private final Pose scorePose1 = poseFactory.of(58, 11, 90);
+    private final Pose coleta2 = poseFactory.of(19, 47, 180);
     private final Pose coleta2Control1 = poseFactory.of(38, 25, 0);
     private final Pose coleta2Control2 = poseFactory.of(29, 49, 0);
-    private final Pose scorePose2 = poseFactory.of(58, 127, 270);
-    private final Pose scorePose2Control1 = poseFactory.of(38, 49, 0);
-    private final Pose scorePose2Control2 = poseFactory.of(11, 108, 0);
-    private final Pose coleta3 = poseFactory.of(47.2, 127, 90);
-    private final Pose coleta3Control1 = poseFactory.of(53, 100, 0);
-    private final Pose scorePose3 = poseFactory.of(58, 127, -90);
-    private final Pose scorePose3Control1 = poseFactory.of(53, 100, 0);
-    private final Pose park = poseFactory.of(13, 120, -90);
+    private final Pose scorePose2 = poseFactory.of(70, 128, 270);
+    private final Pose scorePose2Control1 = poseFactory.of(42, 49, 0);
+    private final Pose scorePose2Control2 = poseFactory.of(15, 108, 0);
+    private final Pose coleta3 = poseFactory.of(52, 130, 90);
+    private final Pose coleta3Control1 = poseFactory.of(78, 103, 0);
+    private final Pose coleta3Control2 = poseFactory.of(45, 90, 0);
+    private final Pose scorePose3 = poseFactory.of(70, 128, -90);
+    private final Pose scorePose3Control1 = poseFactory.of(63, 82, 0);
+    private final Pose park = poseFactory.of(18, 120, -90);
 
     public Path scorePose() {
         return line(startPose, scorePose1).constant(scorePose1);
@@ -71,7 +80,7 @@ public class auto4p2h extends OpMode {
     }
 
     public Path coleta3() {
-        return curve(scorePose2, coleta3Control1, coleta3).linear(scorePose2, coleta3);
+        return curve(scorePose2, coleta3Control1, coleta3Control2, coleta3).linear(scorePose2, coleta3);
     }
 
     public Path scorePose3() {
@@ -88,21 +97,24 @@ public class auto4p2h extends OpMode {
     public void init() {
         follower = Constants.create(hardwareMap);
 
-        lshooter = hardwareMap.get(DcMotorEx.class, "shooterL");
-        rshooter = hardwareMap.get(DcMotorEx.class, "shooterR");
+        lshooter = hardwareMap.get(DcMotorEx.class, "shooterR");
+        rshooter = hardwareMap.get(DcMotorEx.class, "shooterL");
         intake = hardwareMap.get(DcMotor.class, "intake");
         indexer = hardwareMap.get(DcMotor.class, "indexer");
         servoR = hardwareMap.get(Servo.class, "servoR");
         turretAjustR = hardwareMap.get(Servo.class, "turretAjustR");
         turretAjustL = hardwareMap.get(Servo.class, "turretAjustL");
-        servoIntk = hardwareMap.get(Servo.class, "servoIntk");
         turret = hardwareMap.get(Servo.class, "turret");
         servoAR = hardwareMap.get(Servo.class, "servoAR");
         servoAL = hardwareMap.get(Servo.class, "servoAL");
+        servoIntk = hardwareMap.get(Servo.class, "servoIntk");
         distIntake1 = hardwareMap.get(DistanceSensor.class, "distIntake1");
         distIntake2 = hardwareMap.get(DistanceSensor.class, "distIntake2");
         distIntake3 = hardwareMap.get(DistanceSensor.class, "distIntake3");
         distIntake4 = hardwareMap.get(DistanceSensor.class, "distIntake4");
+
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
+        indexer.setDirection(DcMotorSimple.Direction.FORWARD);
 
         turret.setPosition(0.5);
     }
@@ -145,15 +157,13 @@ public class auto4p2h extends OpMode {
     public void autonomousPathUpdate() throws InterruptedException {
         double tolerance = 1.0;
         double idleVel = (180 * 28) / 60.0;
-        servoAR.setPosition(0.57);
-        servoAL.setPosition(0.57);
+        servoAR.setPosition(0.56);
+        servoAL.setPosition(0.56);
         turretAjustL.setPosition(0.08);
         turretAjustR.setPosition(0.08);
 
         switch (pathState) {
-            // ================= PRELOAD (0 - 99) =================
             case 0: //mov tiro
-                servoIntk.setPosition(0.65);
                 rshooter.setVelocity(-idleVel);
                 lshooter.setVelocity(idleVel);
                 follower.follow(scorePose());
@@ -162,35 +172,42 @@ public class auto4p2h extends OpMode {
 
             case 10: //tiro 1
                 if (!follower.isBusy() || isCloseToTarget(scorePose1, tolerance)) {
-                    servoIntk.setPosition(1.0);
-                    shooter();
-                    setPathState(2);
+                    shooter(2);
                 }
                 break;
 
             case 2: //mov coleta2
-                    intake.setPower(0);
-                    indexer.setPower(0);
-                    servoR.setPosition(0.47);
-                    lshooter.setPower(-idleVel);
-                    rshooter.setPower(idleVel);
-                    follower.follow(coleta2());
-                    setPathState(20);
+                atirando = false;
+                intake.setPower(0);
+                indexer.setPower(0);
+                servoR.setPosition(0.3);
+                servoIntk.setPosition(1.0);
+                shooterIdle(idleVel);
+                follower.follow(coleta2());
+                setPathState(20);
                 break;
 
             case 20: //coleta2
+                long agoraC = System.currentTimeMillis();
                 if (!follower.isBusy() || isCloseToTarget(coleta2, tolerance)) {
-                    servoIntk.setPosition(1.0);
                     intake.setPower(-1.0);
                     indexer.setPower(-0.6);
-                    sleep(2000);
-                    setPathState(3);
+
+                    if (!coletando) {
+                        coletando = true;
+                        inicioColeta = System.currentTimeMillis();
+                    }
+
+                    if (System.currentTimeMillis() - inicioColeta >= 2000) {
+                        intake.setPower(-0.2);
+                        indexer.setPower(0);
+                        coletando = false;
+                        setPathState(3);
+                    }
                 }
                 break;
 
             case 3: //mov tiro2
-                servoIntk.setPosition(0.65);
-                intake.setPower(0);
                 indexer.setPower(0);
                 follower.follow(scorePose2());
                 setPathState(30);
@@ -198,33 +215,40 @@ public class auto4p2h extends OpMode {
 
             case 30: //tiro2
                 if (!follower.isBusy() || isCloseToTarget(scorePose2, tolerance)) {
-                    servoIntk.setPosition(1.0);
-                    shooter();
-                    setPathState(4);
+                    shooter(4);
                 }
                 break;
 
             case 4: //mov  coleta3
-                servoIntk.setPosition(0.65);
-                intake.setPower(-1.0);
-                indexer.setPower(-0.6);
+                atirando = false;
+                indexer.setPower(0);
+                servoR.setPosition(0.3);
+                shooterIdle(idleVel);
                 follower.follow(coleta3());
                 setPathState(40);
                 break;
 
             case 40: //coleta3
+                long agoraC2 = System.currentTimeMillis();
                 if (!follower.isBusy() || isCloseToTarget(coleta3, tolerance)) {
-                    servoIntk.setPosition(1.0);
                     intake.setPower(-1.0);
                     indexer.setPower(-0.6);
-                    sleep(2000);
-                    setPathState(5);
+
+                    if (!coletando) {
+                        coletando = true;
+                        inicioColeta = System.currentTimeMillis();
+                    }
+
+                    if (System.currentTimeMillis() - inicioColeta >= 2000) {
+                        intake.setPower(-0.2);
+                        indexer.setPower(0);
+                        coletando = false;
+                        setPathState(5);
+                    }
                 }
                 break;
 
             case 5:  //mov tiro3
-                servoIntk.setPosition(0.65);
-                intake.setPower(0);
                 indexer.setPower(0);
                 follower.follow(scorePose3());
                 setPathState(50);
@@ -232,23 +256,25 @@ public class auto4p2h extends OpMode {
 
             case 50:  //tiro3
                 if (!follower.isBusy() || isCloseToTarget(scorePose3, tolerance)) {
-                    servoIntk.setPosition(1.0);
-                    shooter();
-                    setPathState(6);
+                    shooter(6);
                 }
                 break;
 
             case 6: //park
-                servoIntk.setPosition(0.65);
+                atirando = false;
                 intake.setPower(0);
                 indexer.setPower(0);
+                servoR.setPosition(0.3);
+                shooterIdle(idleVel);
                 follower.follow(park());
-            // ================= PARK (500+) =================
+                setPathState(500);
+                break;
+
             case 500:
                 follower.follow(park());
                 rshooter.setPower(0);
                 lshooter.setPower(0);
-                setPathState(501);
+                setPathState(500);
                 break;
 
             case 501:
@@ -259,35 +285,47 @@ public class auto4p2h extends OpMode {
         }
     }
 
-    public void shooter() {
-        long shootTime = System.currentTimeMillis();
-        double targetRPM = 1810;
+    private void shooterIdle(double idleVel) {
+        rshooter.setVelocity(-idleVel);
+        lshooter.setVelocity(idleVel);
+    }
 
-        while (System.currentTimeMillis() - shootTime < 2500) {
-            rpmAtual = Math.abs(rshooter.getVelocity() / 28.0) * 60.0;
-            ShooterRPM = rpmAtual;
+    public void shooter(int estado) {
+        turretAjustL.setPosition(0.08);
+        turretAjustR.setPosition(0.08);
+        rpmAtual = Math.abs(rshooter.getVelocity() / 28.0) * 60.0;
+        ShooterRPM = rpmAtual;
 
-            double error = targetRPM - rpmAtual;
-            double correction = error * 0.0085;
-            double power = Math.max(0, Math.min(1 + correction, 1));
+        double targetRPM = 1790;
+        double error = targetRPM - rpmAtual;
+        double correction = error * 0.0086;
+        double power = Math.max(0, Math.min(1 + correction, 1));
 
-            rshooter.setPower(-power);
-            lshooter.setPower(-power);
-            servoR.setPosition(0.15);
+        rshooter.setPower(-power);
+        lshooter.setPower(-power);
+        servoR.setPosition(0.7);
 
-            if (rpmAtual >= targetRPM) {
-                indexer.setPower(-0.8);
-                intake.setPower(-0.6);
-            } else {
-                indexer.setPower(0);
-                intake.setPower(0);
+        long agora = System.currentTimeMillis();
+
+        if (rpmAtual >= targetRPM ) {
+            if (!alimentando) {
+                alimentando = true;
+                inicioAlimentacao = agora;
             }
 
-            telemetry.addData("RPM do shooter", rpmAtual);
-            telemetry.update();
+            intake.setPower(-0.6);
+            indexer.setPower(-0.5);
+
+            if (agora - inicioAlimentacao >= 3000) {
+                intake.setPower(0);
+                indexer.setPower(0);
+                alimentando = false;
+                atirando = false;
+                setPathState(estado);
+            }
         }
 
-        indexer.setPower(0);
-        intake.setPower(0);
+        telemetry.addData("RPM", rpmAtual);
+
     }
 }

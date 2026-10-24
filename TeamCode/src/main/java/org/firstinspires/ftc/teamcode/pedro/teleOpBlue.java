@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.pedro.subsystems.turretOdo;
 @TeleOp(name = "TeleOpBlue", group = "aaa teleOp oficial")
 public class teleOpBlue extends LinearOpMode {
 
-    private static final Pose START_POSE = new Pose(81, 10, Math.toRadians(90));
+    private static final Pose START_POSE = new Pose(19, 119, Math.toRadians(-90));
 
     private driveTrainSub drive;
     private servoSub servo;

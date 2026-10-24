@@ -46,6 +46,11 @@ public class turretOdo {
     private boolean hasTarget;
     private boolean previousY;
 
+    double leftHiveX = 58.0;
+    double leftHiveY = 54.0;
+    double rightHiveX = 58.0;
+    double rightHiveY = 91.0;
+
     public turretOdo(HardwareMap hardwareMap, Follower follower) {
         if (follower == null) {
             throw new IllegalArgumentException("Follower nao pode ser null.");
@@ -67,12 +72,6 @@ public class turretOdo {
     }
 
     private void selecionarHive(Pose pose) {
-        double ratio = clamp(pose.x() / 100.0, -0.6, 0.6);
-
-        double leftHiveX = 84.0 - ratio;
-        double leftHiveY = 54.0;
-        double rightHiveX = 84.0 - ratio;
-        double rightHiveY = 91.0;
 
         leftHiveDistance = distance(pose.x(), pose.y(), leftHiveX, leftHiveY);
         rightHiveDistance = distance(pose.x(), pose.y(), rightHiveX, rightHiveY);
@@ -153,6 +152,14 @@ public class turretOdo {
     }
 
     public void update(Gamepad gamepad, Gamepad gamepad2) {
+
+        if (gamepad2.dpad_down) {
+            leftHiveX = follower.pose().x();
+            leftHiveY = follower.pose().y();
+            rightHiveX = follower.pose().x();
+            rightHiveY = follower.pose().y() + 37;
+        }
+
         LLResult result = limelight.getLatestResult();
         if (gamepad2.y && !previousY) {
             estadoAtual = estadoAtual == EstadoTurret.MANUAL

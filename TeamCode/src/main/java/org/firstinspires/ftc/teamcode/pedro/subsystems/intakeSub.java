@@ -57,10 +57,6 @@ public class intakeSub {
             estadoAtual = EstadoIntake.IDLE;
         }
 
-        if (gamepad1.right_trigger > 0.2 && estadoAtual == EstadoIntake.IDLE) {
-            servoIntk.setPosition(0.65);
-        }
-
         switch (estadoAtual) {
             case IDLE:
                 intake.setPower(0);

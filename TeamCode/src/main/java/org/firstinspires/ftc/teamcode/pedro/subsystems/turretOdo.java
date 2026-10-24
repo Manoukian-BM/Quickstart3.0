@@ -43,6 +43,7 @@ public class turretOdo {
     private double manualPosition = CENTRO;
     private long previousUpdateNanos;
     private String selectedHive = "Nenhuma";
+    private double poseT;
     private boolean hasTarget;
     private boolean previousY;
 
@@ -127,7 +128,11 @@ public class turretOdo {
 
         servoPosition = clamp(servoPosition + correction, 0.0, 1.0);
         manualPosition = servoPosition;
-        turret.setPosition(servoPosition);
+        if (follower.pose().x() < 39) {
+            turret.setPosition(servoPosition - 0.08);
+        } else {
+            turret.setPosition(servoPosition);
+        }
     }
 
     private void alinharPelaOdometria(Pose pose) {
@@ -153,11 +158,14 @@ public class turretOdo {
 
     public void update(Gamepad gamepad, Gamepad gamepad2) {
 
-        if (gamepad2.dpad_down) {
-            leftHiveX = follower.pose().x();
-            leftHiveY = follower.pose().y();
-            rightHiveX = follower.pose().x();
-            rightHiveY = follower.pose().y() + 37;
+        if (gamepad.dpad_right) {
+            follower.setX(9.1);
+            follower.setY(130.4);
+            follower.setHeading(Math.toRadians(90.0));
+//            leftHiveX = follower.pose().x();
+//            leftHiveY = follower.pose().y() + 37;
+//            rightHiveX = follower.pose().x();
+//            rightHiveY = follower.pose().y();
         }
 
         LLResult result = limelight.getLatestResult();
@@ -175,6 +183,8 @@ public class turretOdo {
 
         Pose pose = follower.pose();
         if (gamepad2.left_bumper) {
+                alinharPelaOdometria(pose);
+        } else if (gamepad2.right_bumper) {
             int tagId = getVisibleHiveTagId(result);
 
             if (tagId >= 38 && tagId <= 45) {
@@ -194,7 +204,7 @@ public class turretOdo {
 
         if (Math.abs(gamepad.right_stick_x) > 0.2) {
             manualPosition = clamp(
-                    manualPosition + gamepad.right_stick_x
+                    manualPosition - gamepad.right_stick_x
                             * MANUAL_SERVO_RATE * elapsedSeconds,
                     0.0,
                     1.0);

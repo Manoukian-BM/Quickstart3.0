@@ -102,7 +102,7 @@ public class shooterSub {
                 shooterAtirando = false;
                 lshooter.setPower(-0.2);
                 rshooter.setPower(-0.2);
-                servoR.setPosition(0.3);
+                servoR.setPosition(0.27);
                 shooterReady = false;
                 break;
 

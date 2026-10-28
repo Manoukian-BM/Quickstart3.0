@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.pedro.subsystems;
 
-import static com.pedropathing.math.Pose.interpolate;
-
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -25,11 +23,11 @@ public class turretOdo {
     private static final double CENTRO = 0.5;
     private static final double MAX_ANGLE_DEGREES = 180.0;
     private static final double SERVO_RANGE_DEGREES = 360.0;
-    private static final double SERVO_DIRECTION = 1.0;
+    private static final double SERVO_DIRECTION = -1.0;
     private static final double MANUAL_SERVO_RATE = 0.5;
 
     private final Follower follower;
-    private final Servo turret;
+    private final Servo turretR, turretL;
     private Limelight3A limelight;
 
     private EstadoTurret estadoAtual = EstadoTurret.AUTOMATICO;
@@ -47,9 +45,9 @@ public class turretOdo {
     private boolean hasTarget;
     private boolean previousY;
 
-    double leftHiveX = 58.0;
+    double leftHiveX = 57.0;
     double leftHiveY = 54.0;
-    double rightHiveX = 58.0;
+    double rightHiveX = 53.0;
     double rightHiveY = 91.0;
 
     public turretOdo(HardwareMap hardwareMap, Follower follower) {
@@ -57,11 +55,13 @@ public class turretOdo {
             throw new IllegalArgumentException("Follower nao pode ser null.");
         }
         this.follower = follower;
-        turret = hardwareMap.get(Servo.class, "turret");
+        turretR = hardwareMap.get(Servo.class, "turretR");
+        turretL = hardwareMap.get(Servo.class, "turretL");
         this.limelight = hardwareMap.get(Limelight3A.class, "limelight");
         this.limelight.pipelineSwitch(0);
         this.limelight.start();
-        turret.setPosition(CENTRO);
+        turretR.setPosition(CENTRO);
+        turretL.setPosition(CENTRO);
         previousUpdateNanos = System.nanoTime();
 
         limelight.pipelineSwitch(1);
@@ -113,14 +113,14 @@ public class turretOdo {
 
     private static final double LIMELIGHT_GAIN = 0.15;
     private static final double LIMELIGHT_DEADBAND_DEGREES = 1.0;
-    private static final double MAX_SERVO_STEP = 0.002;
+    private static final double MAX_SERVO_STEP = 0.01;
 
     private void alinharPelaLimelight(double tx) {
         if (Math.abs(tx) < LIMELIGHT_DEADBAND_DEGREES) {
             return;
         }
 
-        double correction = + SERVO_DIRECTION
+        double correction = SERVO_DIRECTION
                 * tx / SERVO_RANGE_DEGREES
                 * LIMELIGHT_GAIN;
 
@@ -129,14 +129,17 @@ public class turretOdo {
         servoPosition = clamp(servoPosition + correction, 0.0, 1.0);
         manualPosition = servoPosition;
         if (follower.pose().x() < 39) {
-            turret.setPosition(servoPosition - 0.08);
+            turretR.setPosition(servoPosition - 0.08);
+            turretL.setPosition(servoPosition - 0.08);
         } else {
-            turret.setPosition(servoPosition);
+            turretR.setPosition(servoPosition);
         }
     }
 
     private void alinharPelaOdometria(Pose pose) {
         selecionarHive(pose);
+        double y = follower.pose().y();
+        double x = follower.pose().x();
 
         double angle = Math.atan2(targetY - pose.y(), targetX - pose.x()) - pose.heading();
         angle = Math.atan2(Math.sin(angle), Math.cos(angle));
@@ -153,7 +156,26 @@ public class turretOdo {
                 1.0);
 
         manualPosition = servoPosition;
-        turret.setPosition(servoPosition);
+        if (follower.pose().x() < 45) {
+            if (y <= 70.75) {
+                turretR.setPosition(servoPosition + 0.03);
+                turretL.setPosition(servoPosition + 0.03);
+            } else {
+                turretR.setPosition(servoPosition - 0.03);
+                turretL.setPosition(servoPosition - 0.03);
+            }
+        } else if (follower.pose().x() > 95) {
+            if (y > 70.75) {
+                turretR.setPosition(servoPosition - 0.03);
+                turretL.setPosition(servoPosition - 0.03);
+            } else {
+                turretR.setPosition(servoPosition + 0.03);
+                turretL.setPosition(servoPosition + 0.03);
+            }
+        } else {
+            turretR.setPosition(servoPosition);
+            turretL.setPosition(servoPosition);
+        }
     }
 
     public void update(Gamepad gamepad, Gamepad gamepad2) {
@@ -212,7 +234,8 @@ public class turretOdo {
             manualPosition = CENTRO;
         }
         servoPosition = manualPosition;
-        turret.setPosition(servoPosition);
+        turretR.setPosition(servoPosition);
+        turretL.setPosition(servoPosition);
     }
 
     public static double distance(double x1, double y1, double x2, double y2) {

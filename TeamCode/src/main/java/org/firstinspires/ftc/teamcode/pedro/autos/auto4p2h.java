@@ -32,7 +32,7 @@ public class auto4p2h extends OpMode {
     private Servo servoR;
     private Servo servoAR, servoAL;
     private Servo turretAjustR, turretAjustL;
-    private Servo turret;
+    private Servo turretR, turretL;
     private Servo servoIntk;
     private int pathState;
     private DistanceSensor distIntake1;
@@ -57,13 +57,13 @@ public class auto4p2h extends OpMode {
     private final Pose coleta2 = poseFactory.of(19, 47, 180);
     private final Pose coleta2Control1 = poseFactory.of(38, 25, 0);
     private final Pose coleta2Control2 = poseFactory.of(29, 49, 0);
-    private final Pose scorePose2 = poseFactory.of(70, 128, 270);
+    private final Pose scorePose2 = poseFactory.of(66, 128, 270);
     private final Pose scorePose2Control1 = poseFactory.of(42, 49, 0);
     private final Pose scorePose2Control2 = poseFactory.of(15, 108, 0);
     private final Pose coleta3 = poseFactory.of(52, 130, 90);
     private final Pose coleta3Control1 = poseFactory.of(78, 103, 0);
     private final Pose coleta3Control2 = poseFactory.of(45, 90, 0);
-    private final Pose scorePose3 = poseFactory.of(70, 128, -90);
+    private final Pose scorePose3 = poseFactory.of(66, 128, -90);
     private final Pose scorePose3Control1 = poseFactory.of(63, 82, 0);
     private final Pose park = poseFactory.of(18, 120, -90);
 
@@ -104,7 +104,8 @@ public class auto4p2h extends OpMode {
         servoR = hardwareMap.get(Servo.class, "servoR");
         turretAjustR = hardwareMap.get(Servo.class, "turretAjustR");
         turretAjustL = hardwareMap.get(Servo.class, "turretAjustL");
-        turret = hardwareMap.get(Servo.class, "turret");
+        turretR = hardwareMap.get(Servo.class, "turretR");
+        turretL = hardwareMap.get(Servo.class, "turretL");
         servoAR = hardwareMap.get(Servo.class, "servoAR");
         servoAL = hardwareMap.get(Servo.class, "servoAL");
         servoIntk = hardwareMap.get(Servo.class, "servoIntk");
@@ -116,7 +117,8 @@ public class auto4p2h extends OpMode {
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         indexer.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        turret.setPosition(0.5);
+        turretR.setPosition(0.5);
+        turretL.setPosition(0.5);
     }
 
     @Override
@@ -157,8 +159,8 @@ public class auto4p2h extends OpMode {
     public void autonomousPathUpdate() throws InterruptedException {
         double tolerance = 1.0;
         double idleVel = (180 * 28) / 60.0;
-        servoAR.setPosition(0.56);
-        servoAL.setPosition(0.56);
+        servoAR.setPosition(0.42);
+        servoAL.setPosition(0.62);
         turretAjustL.setPosition(0.08);
         turretAjustR.setPosition(0.08);
 

@@ -109,7 +109,7 @@ public class shooterSub {
             case POLEN:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = 1800;
+                targetRPM = 1830;
 
                 rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
                 error = targetRPM - rpmR;
@@ -117,13 +117,13 @@ public class shooterSub {
                 power = Math.max(0, Math.min(1 + correction, 1));
                 rshooter.setPower(-power);
                 lshooter.setPower(-power);
-                turretAjustL.setPosition(0.08);
-                turretAjustR.setPosition(0.08);
+                turretAjustL.setPosition(0.655);
+                turretAjustR.setPosition(0.095);
                 servoR.setPosition(0.7);
                 if (rpmAtual >= targetRPM) {
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-                        indexer.setPower(-0.6);
-                        intake.setPower(-0.6);
+                        indexer.setPower(-0.7);
+                        intake.setPower(-0.7);
                     }
                 }
                 break;
@@ -131,7 +131,7 @@ public class shooterSub {
             case NECTAR:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = 1980;
+                targetRPM = 2000;
 
                 rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
                 error = targetRPM - rpmR;
@@ -139,8 +139,8 @@ public class shooterSub {
                 power = Math.max(0.05, Math.min(1 + correction, 1));
                 rshooter.setPower(-power);
                 lshooter.setPower(-power);
-                turretAjustL.setPosition(0.5);
-                turretAjustR.setPosition(0.29);
+                turretAjustL.setPosition(0.866);
+                turretAjustR.setPosition(0.32);
                 servoR.setPosition(0.7);
                 if (rpmAtual >= targetRPM) {
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {

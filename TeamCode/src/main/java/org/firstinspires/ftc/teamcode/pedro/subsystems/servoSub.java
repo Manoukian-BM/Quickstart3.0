@@ -13,8 +13,6 @@ public class servoSub {
     private final Servo servoR;
     private final Servo servoIntk;
 
-    private RevColorSensorV3 distIntake4; // I2C 03 control
-
     private boolean previousA = false;
     private boolean previousB = false;
     boolean flower = false;
@@ -29,8 +27,6 @@ public class servoSub {
         servoAR = hardwareMap.get(Servo.class, "servoAR");
         servoAL = hardwareMap.get(Servo.class, "servoAL");
         servoR = hardwareMap.get(Servo.class, "servoR");
-
-        distIntake4 = hardwareMap.get(RevColorSensorV3.class, "distIntake4");
     }
 
     public void update(Gamepad gamepad, Gamepad gamepad2, boolean polen, boolean nectar) {
@@ -45,11 +41,10 @@ public class servoSub {
 
         if (gamepad2.a && !previousA) {
             flower = !flower;
-            double position = flower ? 0.9 : 0.57; // 1 para trás, 0.5 para frente
+            double position = flower ? 0.8 : 0.55; // 1 para trás, 0.5 para frente
 
-            servoAR.setPosition(position - 0.1
-            );
             servoAL.setPosition(position + 0.1);
+            servoAR.setPosition(position);
         }
 
 

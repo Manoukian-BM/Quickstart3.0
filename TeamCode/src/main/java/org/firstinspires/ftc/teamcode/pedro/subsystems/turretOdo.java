@@ -128,11 +128,12 @@ public class turretOdo {
 
         servoPosition = clamp(servoPosition + correction, 0.0, 1.0);
         manualPosition = servoPosition;
-        if (follower.pose().x() < 39) {
+        if (follower.pose().x() < 25) {
             turretR.setPosition(servoPosition - 0.08);
             turretL.setPosition(servoPosition - 0.08);
         } else {
             turretR.setPosition(servoPosition);
+            turretL.setPosition(servoPosition);
         }
     }
 
@@ -156,7 +157,15 @@ public class turretOdo {
                 1.0);
 
         manualPosition = servoPosition;
-        if (follower.pose().x() < 45) {
+        if (follower.pose().x() < 25) {
+            if (y <= 70.75) {
+                turretR.setPosition(servoPosition + 0.015);
+                turretL.setPosition(servoPosition + 0.015);
+            } else {
+                turretR.setPosition(servoPosition - 0.03);
+                turretL.setPosition(servoPosition - 0.03);
+            }
+        } else if (follower.pose().x() > 85) {
             if (y <= 70.75) {
                 turretR.setPosition(servoPosition + 0.03);
                 turretL.setPosition(servoPosition + 0.03);
@@ -164,17 +173,9 @@ public class turretOdo {
                 turretR.setPosition(servoPosition - 0.03);
                 turretL.setPosition(servoPosition - 0.03);
             }
-        } else if (follower.pose().x() > 95) {
-            if (y > 70.75) {
-                turretR.setPosition(servoPosition - 0.03);
-                turretL.setPosition(servoPosition - 0.03);
-            } else {
-                turretR.setPosition(servoPosition + 0.03);
-                turretL.setPosition(servoPosition + 0.03);
-            }
         } else {
-            turretR.setPosition(servoPosition);
-            turretL.setPosition(servoPosition);
+            turretR.setPosition(servoPosition - 0.03);
+            turretL.setPosition(servoPosition - 0.03);
         }
     }
 

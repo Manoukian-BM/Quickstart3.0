@@ -39,9 +39,9 @@ public class servoSub {
 //                turretAjustR.setPosition(position + 0.03);
 //            }
 
-        if (gamepad2.a && !previousA) {
+        if (gamepad2.b && !previousA) {
             flower = !flower;
-            double position = flower ? 0.8 : 0.55; // 1 para trás, 0.5 para frente
+            double position = flower ? 0.56 : 0.83; // cima: 0.83, abaixo: 0.57
 
             servoAL.setPosition(position + 0.1);
             servoAR.setPosition(position);

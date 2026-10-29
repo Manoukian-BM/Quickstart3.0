@@ -109,7 +109,7 @@ public class shooterSub {
             case POLEN:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = 1830;
+                targetRPM = 1815;
 
                 rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
                 error = targetRPM - rpmR;
@@ -131,7 +131,7 @@ public class shooterSub {
             case NECTAR:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = 2000;
+                targetRPM = 1960;
 
                 rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
                 error = targetRPM - rpmR;
@@ -144,55 +144,55 @@ public class shooterSub {
                 servoR.setPosition(0.7);
                 if (rpmAtual >= targetRPM) {
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-                        indexer.setPower(-0.9);
-                        intake.setPower(-0.9);
+                        indexer.setPower(-1.0);
+                        intake.setPower(-1.0);
                     }
                 }
                 break;
 
-//            case POLEN_L:
-//                shooterAtirando = true;
-//                shootTime = System.currentTimeMillis();
-//                targetRPM = interpolateHiveRpm(distanciaHIVE) - 15;
-//
-//                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
-//                error = targetRPM - rpmR;
-//                correction = error * 0.009;
-//                power = Math.max(0, Math.min(1 + correction, 1));
-//                rshooter.setPower(-power);
-//                lshooter.setPower(-power);
-//                turretAjustL.setPosition(0.08);
-//                turretAjustR.setPosition(0.08);
-//                servoR.setPosition(0.15);
-//                if (rpmAtual >= targetRPM) {
-//                    if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-//                        indexer.setPower(-0.6);
-//                        intake.setPower(-0.6);
-//                    }
-//                }
-//                break;
-//
-//            case NECTAR_L:
-//                shooterAtirando = true;
-//                shootTime = System.currentTimeMillis();
-//                targetRPM = interpolateHiveRpm(distanciaHIVE);
-//                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
-//                error = targetRPM - rpmR;
-//                correction = error * 0.009;
-//                turretAjustR.setPosition(0.5);
-//                turretAjustL.setPosition(0.29);
-//                power = Math.max(0, Math.min(0.5 + correction, 1));
-//                rshooter.setPower(-power);
-//                lshooter.setPower(-power);
-//
-//                servoR.setPosition(0.15);
-//                if (rpmAtual >= targetRPM) {
-//                    if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-//                        indexer.setPower(-0.95);
-//                        intake.setPower(-0.8);
-//                    }
-//                }
-//                break;
+            case POLEN_L:
+                shooterAtirando = true;
+                shootTime = System.currentTimeMillis();
+                targetRPM = 1950;
+
+                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
+                error = targetRPM - rpmR;
+                correction = error * 0.009;
+                power = Math.max(0, Math.min(1 + correction, 1));
+                rshooter.setPower(-power);
+                lshooter.setPower(-power);
+                turretAjustL.setPosition(0.08);
+                turretAjustR.setPosition(0.08);
+                servoR.setPosition(0.15);
+                if (rpmAtual >= targetRPM) {
+                    if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
+                        indexer.setPower(-0.6);
+                        intake.setPower(-0.6);
+                    }
+                }
+                break;
+
+            case NECTAR_L:
+                shooterAtirando = true;
+                shootTime = System.currentTimeMillis();
+                targetRPM = 2050;
+                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
+                error = targetRPM - rpmR;
+                correction = error * 0.009;
+                turretAjustR.setPosition(0.5);
+                turretAjustL.setPosition(0.29);
+                power = Math.max(0, Math.min(0.5 + correction, 1));
+                rshooter.setPower(-power);
+                lshooter.setPower(-power);
+
+                servoR.setPosition(0.15);
+                if (rpmAtual >= targetRPM) {
+                    if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
+                        indexer.setPower(-0.95);
+                        intake.setPower(-0.8);
+                    }
+                }
+                break;
 
             case ACCEL:
                 rshooter.setPower(-0.35);

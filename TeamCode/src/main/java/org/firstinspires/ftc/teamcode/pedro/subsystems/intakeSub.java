@@ -59,10 +59,10 @@ public class intakeSub {
 
         switch (estadoAtual) {
             case IDLE:
-                intake.setPower(0);
                 //indexer.setPower(0);
                 if (!shooterAtivo) {
                     indexer.setPower(0);
+                    intake.setPower(0);
                 }
                 if (!shooterAtivo) {
                 servoIntk.setPosition(0.65);
@@ -88,10 +88,7 @@ public class intakeSub {
                 gamepad2.rumble(200);
                 gamepad1.rumble(200);
 
-
-                if (shooterAtivo) {
-                    intake.setPower(-1.0);
-                } else {
+                if (!shooterAtivo){
                     indexer.setPower(0);
                     intake.setPower(0);
                 }

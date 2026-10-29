@@ -27,10 +27,14 @@ public class shooterSub {
     ElapsedTime timer = new ElapsedTime();
     double shootTime = 0;
 
-    private static final double MIN_DIST = 45.0;
+    private static final double MIN_DIST = 41.0;
     private static final double MAX_DIST = 55.0;
-    private static final double MIN_RPM  = 1800.0;
-    private static final double MAX_RPM  = 1850.0;
+    private static final double MIN_RPM = 1790.0;
+    private static final double MAX_RPM = 1840.0;
+    private static final double PID_KP = 0.0085;
+    private static final double PID_KI = 0.0002;
+    private static final double PID_KD = 0.0001;
+    private static final double MAX_INTEGRAL = 500.0;
 
     double targetRPM;
 
@@ -39,13 +43,48 @@ public class shooterSub {
     }
 
     private EstadoShooter estadoAtual = EstadoShooter.IDLE;
+    private EstadoShooter estadoAnterior = EstadoShooter.IDLE;
     private double rpmAtual = 0;
+    private double pidIntegral = 0;
+    private double pidLastRpm = 0;
+    private long pidLastTimeNanos = 0;
 
     private double interpolateRpm(double distance) {
-        // Limita a distância ao intervalo calibrado
         double d = Math.max(MIN_DIST, Math.min(distance, MAX_DIST));
         double fraction = (d - MIN_DIST) / (MAX_DIST - MIN_DIST);
         return MIN_RPM + fraction * (MAX_RPM - MIN_RPM);
+    }
+
+    private void resetPid() {
+        pidIntegral = 0;
+        pidLastRpm = rpmAtual;
+        pidLastTimeNanos = 0;
+    }
+
+    private double calculatePidPower(double target, double measuredRpm) {
+        long now = System.nanoTime();
+        if (pidLastTimeNanos == 0) {
+            pidLastTimeNanos = now;
+            pidLastRpm = measuredRpm;
+        }
+
+        double dt = (now - pidLastTimeNanos) / 1_000_000_000.0;
+        if (dt <= 0) {
+            return 0;
+        }
+
+        double pidError = target - measuredRpm;
+        double derivative = (measuredRpm - pidLastRpm) / dt;
+        pidIntegral = Math.max(-MAX_INTEGRAL,
+                Math.min(pidIntegral + pidError * dt, MAX_INTEGRAL));
+
+        double output = PID_KP * pidError
+                + PID_KI * pidIntegral
+                - PID_KD * derivative;
+
+        pidLastRpm = measuredRpm;
+        pidLastTimeNanos = now;
+        return Math.max(-1.0, Math.min(output, 1.0));
     }
 
     public shooterSub(HardwareMap hardwareMap, DcMotorEx indexer) {
@@ -97,17 +136,15 @@ public class shooterSub {
             estadoAtual = EstadoShooter.NECTAR;
         } else if (gamepad2.dpad_right) {
             estadoAtual = EstadoShooter.POLEN_L;
-//        } else if (gamepad2.dpad_left) {
-//            estadoAtual = EstadoShooter.NECTAR_L;
-//        } else if (gamepad2.right_bumper) {
-//            estadoAtual = EstadoShooter.ACCEL;
         } else {
             estadoAtual = EstadoShooter.IDLE;
         }
 
-
         rpmAtual = Math.abs((rshooter.getVelocity() / 28) * 60);
-        double targetRPM;
+        if (estadoAtual != estadoAnterior) {
+            resetPid();
+            estadoAnterior = estadoAtual;
+        }
 
         switch (estadoAtual) {
             case IDLE:
@@ -125,8 +162,7 @@ public class shooterSub {
 
                 rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
                 error = targetRPM - rpmR;
-                correction = error * 0.0085;
-                power = Math.max(0, Math.min(1 + correction, 1));
+                power = calculatePidPower(targetRPM, rpmR);
                 rshooter.setPower(-power);
                 lshooter.setPower(-power);
                 turretAjustL.setPosition(0.655);
@@ -233,5 +269,9 @@ public class shooterSub {
 
     public String getEstado() {
         return estadoAtual.toString();
+    }
+
+    public double getTargetRPM() {
+        return targetRPM;
     }
 }

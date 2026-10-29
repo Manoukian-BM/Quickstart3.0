@@ -45,9 +45,9 @@ public class turretOdo {
     private boolean hasTarget;
     private boolean previousY;
 
-    double leftHiveX = 57.0;
+    double leftHiveX = 54.0;
     double leftHiveY = 54.0;
-    double rightHiveX = 53.0;
+    double rightHiveX = 52.8;
     double rightHiveY = 91.0;
 
     public turretOdo(HardwareMap hardwareMap, Follower follower) {
@@ -246,11 +246,11 @@ public class turretOdo {
     }
 
     public double getLeftHiveDistance() {
-        return leftHiveDistance * 0.985;
+        return leftHiveDistance ;
     }
 
     public double getRightHiveDistance() {
-        return rightHiveDistance * 0.985;
+        return rightHiveDistance;
     }
 
     public double getAngleDegrees() {

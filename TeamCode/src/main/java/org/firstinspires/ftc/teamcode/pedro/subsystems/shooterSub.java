@@ -27,6 +27,11 @@ public class shooterSub {
     ElapsedTime timer = new ElapsedTime();
     double shootTime = 0;
 
+    private static final double MIN_DIST = 45.0;
+    private static final double MAX_DIST = 55.0;
+    private static final double MIN_RPM  = 1800.0;
+    private static final double MAX_RPM  = 1850.0;
+
     double targetRPM;
 
     public enum EstadoShooter {
@@ -35,6 +40,13 @@ public class shooterSub {
 
     private EstadoShooter estadoAtual = EstadoShooter.IDLE;
     private double rpmAtual = 0;
+
+    private double interpolateRpm(double distance) {
+        // Limita a distância ao intervalo calibrado
+        double d = Math.max(MIN_DIST, Math.min(distance, MAX_DIST));
+        double fraction = (d - MIN_DIST) / (MAX_DIST - MIN_DIST);
+        return MIN_RPM + fraction * (MAX_RPM - MIN_RPM);
+    }
 
     public shooterSub(HardwareMap hardwareMap, DcMotorEx indexer) {
         turretAjustR = hardwareMap.get(Servo.class, "turretAjustR");
@@ -109,7 +121,7 @@ public class shooterSub {
             case POLEN:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = 1815;
+                targetRPM = interpolateRpm(distanciaHIVE);
 
                 rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
                 error = targetRPM - rpmR;
@@ -122,8 +134,8 @@ public class shooterSub {
                 servoR.setPosition(0.7);
                 if (rpmAtual >= targetRPM) {
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-                        indexer.setPower(-0.7);
-                        intake.setPower(-0.7);
+                        indexer.setPower(-0.6);
+                        intake.setPower(-0.6);
                     }
                 }
                 break;
@@ -153,17 +165,17 @@ public class shooterSub {
             case POLEN_L:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = 1950;
+                targetRPM = 1850;
 
                 rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
                 error = targetRPM - rpmR;
-                correction = error * 0.009;
+                correction = error * 0.0085;
                 power = Math.max(0, Math.min(1 + correction, 1));
                 rshooter.setPower(-power);
                 lshooter.setPower(-power);
-                turretAjustL.setPosition(0.08);
-                turretAjustR.setPosition(0.08);
-                servoR.setPosition(0.15);
+                turretAjustL.setPosition(0.655);
+                turretAjustR.setPosition(0.095);
+                servoR.setPosition(0.7);
                 if (rpmAtual >= targetRPM) {
                     if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
                         indexer.setPower(-0.6);

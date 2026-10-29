@@ -81,13 +81,13 @@ public class teleOpBlue extends LinearOpMode {
             follower.update();
             Pose currentPose = follower.pose();
 
-            double distanciaHive = turret.getDist();
+            turret.update(gamepad1, gamepad2);
+            double distanciaHive = turretOdo.getDist();
 
             servo.update(gamepad1, gamepad2, shooter.tiroPolen(), shooter.tiroPolen());
             intake.update(gamepad1, gamepad2, shooter.isAtirando(), dI1, dI2, dI3, dI4);
-            shooter.update(gamepad1, gamepad2, 10, intake.isColetando(),
-                    intake.isCuspindo(), distanciaHive);
-            turret.update(gamepad1, gamepad2);
+            shooter.update(gamepad1, gamepad2, turretOdo.getDist(), intake.isColetando(),
+                    intake.isCuspindo(), turretOdo.getDist());
             drive.teleopUpdate(gamepad1, gamepad2);
 
             telemetry.addData("HIVE escolhida", turret.getSelectedHive());
@@ -99,14 +99,14 @@ public class teleOpBlue extends LinearOpMode {
             telemetry.addData("Follower ocupado", follower.isBusy());
             telemetry.addData("X", currentPose.x());
             telemetry.addData("Y", currentPose.y());
-            telemetry.addData("Angulo", Math.toDegrees(currentPose.heading()));
+            telemetry.addData("Aangulo", Math.toDegrees(currentPose.heading()));
             telemetry.addData("Tempo", timer.seconds());
             telemetry.addData("right_stick_x", gamepad2.right_stick_x);
             telemetry.addData("RPM", shooter.getRPM());
-            telemetry.addData("DistIntake1", dI1);
-            telemetry.addData("DistIntake2", dI2);
-            telemetry.addData("DistIntake3", dI3);
-            telemetry.addData("DistIntake4", dI4);
+//            telemetry.addData("DistIntake1", dI1);
+//            telemetry.addData("DistIntake2", dI2);
+//            telemetry.addData("DistIntake3", dI3);
+//            telemetry.addData("DistIntake4", dI4);
             telemetry.update();
         }
     }

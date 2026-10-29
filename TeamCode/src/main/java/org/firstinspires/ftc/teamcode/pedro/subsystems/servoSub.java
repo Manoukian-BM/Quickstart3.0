@@ -54,7 +54,7 @@ public class servoSub {
             servoIntk.setPosition(0.65);
         }
 
-        previousA = gamepad2.a;
+        previousA = gamepad2.b;
         previousB = gamepad.b;
     }
 }

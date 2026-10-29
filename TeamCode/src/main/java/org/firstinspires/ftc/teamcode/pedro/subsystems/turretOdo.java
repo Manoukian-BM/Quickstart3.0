@@ -77,7 +77,7 @@ public class turretOdo {
         leftHiveDistance = distance(pose.x(), pose.y(), leftHiveX, leftHiveY);
         rightHiveDistance = distance(pose.x(), pose.y(), rightHiveX, rightHiveY);
 
-        if (pose.y() < 72.0) {
+        if (pose.y() < 71.0) {
             targetX = leftHiveX;
             targetY = leftHiveY;
             selectedHive = "Esquerda";
@@ -137,7 +137,7 @@ public class turretOdo {
         }
     }
 
-    private void alinharPelaOdometria(Pose pose) {
+    private void alinharPelaOdometria(Pose pose, Gamepad gamepad2) {
         selecionarHive(pose);
         double y = follower.pose().y();
         double x = follower.pose().x();
@@ -157,29 +157,20 @@ public class turretOdo {
                 1.0);
 
         manualPosition = servoPosition;
-        if (follower.pose().x() < 25) {
-            if (y <= 70.75) {
-                turretR.setPosition(servoPosition + 0.015);
-                turretL.setPosition(servoPosition + 0.015);
-            } else {
-                turretR.setPosition(servoPosition - 0.03);
-                turretL.setPosition(servoPosition - 0.03);
-            }
-        } else if (follower.pose().x() > 85) {
-            if (y <= 70.75) {
-                turretR.setPosition(servoPosition + 0.03);
-                turretL.setPosition(servoPosition + 0.03);
-            } else {
-                turretR.setPosition(servoPosition - 0.03);
-                turretL.setPosition(servoPosition - 0.03);
-            }
-        } else {
-            turretR.setPosition(servoPosition - 0.03);
-            turretL.setPosition(servoPosition - 0.03);
+        if (y > 69) {
+            turretR.setPosition(servoPosition - 0.05);
+            turretL.setPosition(servoPosition - 0.05);
+        } else if (y <= 69) {
+            turretR.setPosition(servoPosition);
+            turretL.setPosition(servoPosition);
         }
     }
 
     public void update(Gamepad gamepad, Gamepad gamepad2) {
+        Pose pose = follower.pose();
+        selecionarHive(pose);   // mantém distSelected sempre atualizado
+        leftHiveDistance = distance(pose.x(), pose.y(), leftHiveX, leftHiveY);
+        rightHiveDistance = distance(pose.x(), pose.y(), rightHiveX, rightHiveY);
 
         if (gamepad.dpad_right) {
             follower.setX(9.1);
@@ -204,18 +195,18 @@ public class turretOdo {
             return;
         }
 
-        Pose pose = follower.pose();
         if (gamepad2.left_bumper) {
-                alinharPelaOdometria(pose);
+                alinharPelaOdometria(pose, gamepad2);
         } else if (gamepad2.right_bumper) {
-            int tagId = getVisibleHiveTagId(result);
-
-            if (tagId >= 38 && tagId <= 45) {
-                selectedHive = tagId <= 41 ? "Esquerda" : "Direita";
-                alinharPelaLimelight(result.getTx());
-            } else {
-                alinharPelaOdometria(pose);
-            }
+//            int tagId = getVisibleHiveTagId(result);
+//
+//            if (tagId >= 38 && tagId <= 45) {
+//                selectedHive = tagId <= 41 ? "Esquerda" : "Direita";
+//                alinharPelaLimelight(result.getTx());
+//            } else {
+//                alinharPelaOdometria(pose);
+//            }
+            alinharPelaOdometria(pose, gamepad2);
         }
     }
 
@@ -255,11 +246,11 @@ public class turretOdo {
     }
 
     public double getLeftHiveDistance() {
-        return leftHiveDistance;
+        return leftHiveDistance * 0.985;
     }
 
     public double getRightHiveDistance() {
-        return rightHiveDistance;
+        return rightHiveDistance * 0.985;
     }
 
     public double getAngleDegrees() {

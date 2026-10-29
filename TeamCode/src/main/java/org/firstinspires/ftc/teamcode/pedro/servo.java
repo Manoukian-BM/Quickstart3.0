@@ -61,7 +61,6 @@ public class servo extends LinearOpMode {
 
         while (opModeIsActive()) {
 //
-//            if (gamepad1.b && !previousB) {
 //                nectar = !nectar;
 //                double position = nectar ? 0.3 : 0.1;
 //

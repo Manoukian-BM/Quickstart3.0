@@ -88,12 +88,17 @@ public class teleOpBlue extends LinearOpMode {
             intake.update(gamepad1, gamepad2, shooter.isAtirando(), dI1, dI2, dI3, dI4);
             shooter.update(gamepad1, gamepad2, turretOdo.getDist(), intake.isColetando(),
                     intake.isCuspindo(), turretOdo.getDist());
-            drive.teleopUpdate(gamepad1, gamepad2);
+            //drive.teleopUpdate(gamepad1, gamepad2);
+            double forward = -gamepad1.left_stick_y;
+            double lateral = gamepad1.left_stick_x;
+            double turn = gamepad1.right_stick_x;
+            follower.manual(forward, lateral, turn);
+            follower.update();
 
             telemetry.addData("HIVE escolhida", turret.getSelectedHive());
             telemetry.addData("Distancia da HIVE", turret.getDist());
-            telemetry.addData("Distancia HIVE direita", turret.getLeftHiveDistance());
-            telemetry.addData("Distancia HIVE esquerda", turret.getRightHiveDistance());
+            telemetry.addData("Distancia HIVE esquerda", turret.getLeftHiveDistance());
+            telemetry.addData("Distancia HIVE direita", turret.getRightHiveDistance());
             telemetry.addData("Angulo relativo", turret.getAngleDegrees());
             telemetry.addData("Posicao do servo", turret.getServoPosition());
             telemetry.addData("Follower ocupado", follower.isBusy());

@@ -92,8 +92,8 @@ public class teleOpBlue extends LinearOpMode {
 
             telemetry.addData("HIVE escolhida", turret.getSelectedHive());
             telemetry.addData("Distancia da HIVE", turret.getDist());
-            telemetry.addData("Distancia HIVE esquerda", turret.getLeftHiveDistance());
-            telemetry.addData("Distancia HIVE direita", turret.getRightHiveDistance());
+            telemetry.addData("Distancia HIVE direita", turret.getLeftHiveDistance());
+            telemetry.addData("Distancia HIVE esquerda", turret.getRightHiveDistance());
             telemetry.addData("Angulo relativo", turret.getAngleDegrees());
             telemetry.addData("Posicao do servo", turret.getServoPosition());
             telemetry.addData("Follower ocupado", follower.isBusy());

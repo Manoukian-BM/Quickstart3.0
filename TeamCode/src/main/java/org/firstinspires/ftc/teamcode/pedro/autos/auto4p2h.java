@@ -159,8 +159,8 @@ public class auto4p2h extends OpMode {
     public void autonomousPathUpdate() throws InterruptedException {
         double tolerance = 1.0;
         double idleVel = (180 * 28) / 60.0;
-        servoAR.setPosition(0.42);
-        servoAL.setPosition(0.62);
+        servoAR.setPosition(0.56);
+        servoAL.setPosition(0.66);
         turretAjustL.setPosition(0.08);
         turretAjustR.setPosition(0.08);
 
@@ -174,7 +174,7 @@ public class auto4p2h extends OpMode {
 
             case 10: //tiro 1
                 if (!follower.isBusy() || isCloseToTarget(scorePose1, tolerance)) {
-                    shooter(2);
+                    shooter(2, 1780);
                 }
                 break;
 
@@ -217,7 +217,7 @@ public class auto4p2h extends OpMode {
 
             case 30: //tiro2
                 if (!follower.isBusy() || isCloseToTarget(scorePose2, tolerance)) {
-                    shooter(4);
+                    shooter(4, 1780);
                 }
                 break;
 
@@ -258,7 +258,7 @@ public class auto4p2h extends OpMode {
 
             case 50:  //tiro3
                 if (!follower.isBusy() || isCloseToTarget(scorePose3, tolerance)) {
-                    shooter(6);
+                    shooter(6, 1770);
                 }
                 break;
 
@@ -292,13 +292,13 @@ public class auto4p2h extends OpMode {
         lshooter.setVelocity(idleVel);
     }
 
-    public void shooter(int estado) {
+    public void shooter(int estado, int rpm) {
         turretAjustL.setPosition(0.08);
         turretAjustR.setPosition(0.08);
         rpmAtual = Math.abs(rshooter.getVelocity() / 28.0) * 60.0;
         ShooterRPM = rpmAtual;
 
-        double targetRPM = 1790;
+        double targetRPM = rpm;
         double error = targetRPM - rpmAtual;
         double correction = error * 0.0086;
         double power = Math.max(0, Math.min(1 + correction, 1));
@@ -309,14 +309,14 @@ public class auto4p2h extends OpMode {
 
         long agora = System.currentTimeMillis();
 
-        if (rpmAtual >= targetRPM ) {
+        if (rpmAtual >= targetRPM) {
             if (!alimentando) {
                 alimentando = true;
                 inicioAlimentacao = agora;
             }
 
-            intake.setPower(-0.6);
-            indexer.setPower(-0.5);
+            intake.setPower(-0.65);
+            indexer.setPower(-0.65);
 
             if (agora - inicioAlimentacao >= 3000) {
                 intake.setPower(0);
@@ -328,6 +328,5 @@ public class auto4p2h extends OpMode {
         }
 
         telemetry.addData("RPM", rpmAtual);
-
     }
 }

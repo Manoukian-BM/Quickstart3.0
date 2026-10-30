@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class driveTrainSub {
@@ -46,18 +47,19 @@ public class driveTrainSub {
     }
 
     public void teleopUpdate(Gamepad gamepad, Gamepad gamepad2) {
-        double divisor;
-        if (gamepad.left_bumper) divisor = 3.2;       // Lento
-        else if (gamepad.right_bumper) divisor = 0.1; // Turbo
-        else divisor = 1;                           // Normal
+//        double divisor;
+//        if (gamepad.left_bumper) divisor = 3.2;       // Lento
+//        else if (gamepad.right_bumper) divisor = 0.1; // Turbo
+//        else divisor = 1;                           // Normal
+//
+//        double vertical = -(gamepad.left_stick_y / divisor);
+//        double horizontal = -(gamepad.left_stick_x / divisor);
+//        double pivot = (gamepad.right_stick_x / divisor);
+//
+//        roda1.setPower(-pivot + (vertical + (horizontal)));
+//        roda3.setPower(-pivot + vertical - (horizontal));
+//        roda0.setPower(pivot + vertical - (horizontal));
+//        roda2.setPower(pivot + (vertical + horizontal));
 
-        double vertical = -(gamepad.left_stick_y / divisor);
-        double horizontal = -(gamepad.left_stick_x / divisor);
-        double pivot = (gamepad.right_stick_x / divisor);
-
-        roda1.setPower(-pivot + (vertical + (horizontal)));
-        roda3.setPower(-pivot + vertical - (horizontal));
-        roda0.setPower(pivot + vertical - (horizontal));
-        roda2.setPower(pivot + (vertical + horizontal));
     }
 }

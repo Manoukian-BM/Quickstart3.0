@@ -83,6 +83,8 @@ public class teleOpBlue extends LinearOpMode {
             double dI3 = distIntake3.getDistance(DistanceUnit.CM);
             double dI4 = distIntake4.getDistance(DistanceUnit.CM);
 
+            // Atualizar a pose uma vez por ciclo, com conducao pelo Pedro.
+            follower.manual(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x);
             follower.update();
             Pose currentPose = follower.pose();
 
@@ -95,7 +97,7 @@ public class teleOpBlue extends LinearOpMode {
             intake.update(gamepad1, gamepad2, tiroSolicitado, dI1, dI2, dI3, dI4);
             shooter.update(gamepad1, gamepad2, turretOdo.getDist(), intake.isColetando(),
                     intake.isCuspindo(), turretOdo.getDist());
-            drive.teleopUpdate(gamepad1, gamepad2);
+            // Os motores de conducao sao comandados pelo follower acima.
 
             long telemetryNow=System.nanoTime();
             if (telemetryNow-lastTelemetryNs>=200_000_000L) {

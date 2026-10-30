@@ -28,6 +28,7 @@ public class teleOpBlue extends LinearOpMode {
     private turretOdo turret;
     private Follower follower;
     private ElapsedTime timer;
+    private long lastTelemetryNs;
     private Servo servoAR;
     private Servo servoAL;
     private DistanceSensor distIntake1;
@@ -37,7 +38,7 @@ public class teleOpBlue extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        follower = Constants.create(hardwareMap);
+        follower = Constants.createTeleBlue(hardwareMap);
         if (follower == null) {
             telemetry.addLine("Pedro Pathing Follower nao configurado em Constants.create().");
             telemetry.update();
@@ -59,11 +60,13 @@ public class teleOpBlue extends LinearOpMode {
         servoAR = hardwareMap.get(Servo.class, "servoAR");
         servoAL = hardwareMap.get(Servo.class, "servoAL");
 
-        servoAR.setPosition(0.93);
-        servoAL.setPosition(0.83);
+        // Mesma posicao de subir usada pelo botao do P2 em servoSub.
+        servoAR.setPosition(0.83);
+        servoAL.setPosition(0.93);
         timer = new ElapsedTime();
 
-        telemetry.addLine("TeleOp pronto.");
+        telemetry.addLine("TeleOp pronto. P1 D-pad direito: reset na marca (9.1,130.4,90 graus).");
+        telemetry.addLine("P2 R3: manual/automatico. Triangulo: ajuste fino pelas 4 tags azuis.");
         telemetry.update();
         waitForStart();
 
@@ -71,7 +74,9 @@ public class teleOpBlue extends LinearOpMode {
             return;
         }
 
+        telemetry.setMsTransmissionInterval(200);
         timer.reset();
+        try {
         while (opModeIsActive()) {
             double dI1 = distIntake1.getDistance(DistanceUnit.CM);
             double dI2 = distIntake2.getDistance(DistanceUnit.CM);
@@ -85,11 +90,18 @@ public class teleOpBlue extends LinearOpMode {
             double distanciaHive = turretOdo.getDist();
 
             servo.update(gamepad1, gamepad2, shooter.tiroPolen(), shooter.tiroPolen());
-            intake.update(gamepad1, gamepad2, shooter.isAtirando(), dI1, dI2, dI3, dI4);
+            boolean tiroSolicitado = gamepad2.right_trigger > 0.2 || gamepad2.left_trigger > 0.2
+                    || gamepad2.dpad_right || shooter.ownsFeedCycle();
+            intake.update(gamepad1, gamepad2, tiroSolicitado, dI1, dI2, dI3, dI4);
             shooter.update(gamepad1, gamepad2, turretOdo.getDist(), intake.isColetando(),
                     intake.isCuspindo(), turretOdo.getDist());
             drive.teleopUpdate(gamepad1, gamepad2);
 
+            long telemetryNow=System.nanoTime();
+            if (telemetryNow-lastTelemetryNs>=200_000_000L) {
+            lastTelemetryNs=telemetryNow;
+            turret.addDiagnostics(telemetry);
+            telemetry.addData("Modo da mira (P2 R3)", turret.getEstado());
             telemetry.addData("HIVE escolhida", turret.getSelectedHive());
             telemetry.addData("Distancia da HIVE", turret.getDist());
             telemetry.addData("Distancia HIVE esquerda", turret.getLeftHiveDistance());
@@ -102,12 +114,22 @@ public class teleOpBlue extends LinearOpMode {
             telemetry.addData("Aangulo", Math.toDegrees(currentPose.heading()));
             telemetry.addData("Tempo", timer.seconds());
             telemetry.addData("right_stick_x", gamepad2.right_stick_x);
-            telemetry.addData("RPM", shooter.getRPM());
+            telemetry.addData("RPM alvo pela odometria", shooter.getTargetRPM());
+            telemetry.addData("RPM shooterL", shooter.getRPM());
+            telemetry.addData("Shooter pronto", shooter.isReady());
+            telemetry.addData("Alimentacao do tiro", shooter.getFeedStatus());
+            telemetry.addData("Ajuste fino mira (graus)", turret.getAutoTrimDegrees());
+            telemetry.addData("Potencia shooterR/L", "%.2f / %.2f", shooter.getLeftPower(), shooter.getRightPower());
 //            telemetry.addData("DistIntake1", dI1);
 //            telemetry.addData("DistIntake2", dI2);
 //            telemetry.addData("DistIntake3", dI3);
 //            telemetry.addData("DistIntake4", dI4);
             telemetry.update();
+            }
+        }
+        } finally {
+            shooter.stop();
+            turret.close();
         }
     }
 }

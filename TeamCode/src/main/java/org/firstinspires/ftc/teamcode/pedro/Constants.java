@@ -71,6 +71,24 @@ public class Constants {
             }
     );
 
+    // Medidas relativas ao centro geometrico. X pod longitudinal: esquerda positiva.
+    // Y pod lateral: frente positiva. Configuracao dedicada para nao recalibrar autos existentes.
+    public static final double TELEBLUE_X_POD_OFFSET_MM = 85.0;
+    public static final double TELEBLUE_Y_POD_OFFSET_MM = -90.0;
+    public static PinpointConfig teleBlueLocalizerConfig = new PinpointConfig(c -> {
+        c.name.set("pinpoint");
+        c.podType.set(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        c.xPodOffset.set(TELEBLUE_X_POD_OFFSET_MM);
+        c.yPodOffset.set(TELEBLUE_Y_POD_OFFSET_MM);
+        c.offsetUnits.set(DistanceUnit.MM);
+        c.globalDistanceUnit.set(DistanceUnit.INCH);
+        c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);
+    });
+    public static Follower createTeleBlue(HardwareMap h) {
+        return new Follower(new PinpointLocalizer(h, teleBlueLocalizerConfig),
+                new Mecanum(h, drivetrainConfig), new Foresight(foresightConfig));
+    }
     public static Follower create(HardwareMap h) {
         return new Follower(
                 new PinpointLocalizer(h , localizerConfig),

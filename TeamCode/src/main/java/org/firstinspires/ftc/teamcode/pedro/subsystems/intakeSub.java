@@ -45,6 +45,8 @@ public class intakeSub {
                        double distIntake1Val, double distIntake2Val,
                        double distIntake3Val, double distIntake4Val) {
 
+        // O shooter controla os motores durante aceleracao, espera e disparo.
+        if (shooterAtivo) return;
         recemCarregado = false;
         if (gamepad1.square) {
             estadoAtual = EstadoIntake.EXPELIR;
@@ -81,7 +83,7 @@ public class intakeSub {
             case EXPELIR:
                 indexer.setPower(0.6);
                 intake.setPower(0.6);
-                servoIntk.setPosition(1.0);
+                servoIntk.setPosition(1.0 );
                 break;
 
             case CARREGADO:

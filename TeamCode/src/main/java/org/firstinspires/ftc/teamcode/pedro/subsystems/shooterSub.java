@@ -1,237 +1,180 @@
 package org.firstinspires.ftc.teamcode.pedro.subsystems;
 
-import com.qualcomm.robotcore.hardware.ColorRangeSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 public class shooterSub {
-    private final DcMotorEx lshooter;
-    private final DcMotorEx rshooter;
-    private final DcMotorEx indexer;
+    // Preserva a conversao existente; confirmar 28 ticks por volta do eixo do shooter.
+    private static final double TICKS_PER_REV = 28.0;
+    private static final double RPM_TOLERANCE = 75.0;
+    private static final long MIN_FEED_NS = 2_500_000_000L;
+    private static final long HOOD_SETTLE_NS = 300_000_000L;
+    private static final long GATE_OPEN_NS = 150_000_000L;
+    private static final double GATE_CLOSED = 0.27, GATE_OPEN = 0.7;
+    private static final double MIN_DIST = 45, MAX_DIST = 55;
+    private static final double MIN_RPM = 1770, MAX_RPM = 1850;
+    // Extensao inicial alem de 55 in: calibrar no robo antes de ampliar este teto.
+    private static final double EXTRA_DISTANCE_RPM_LIMIT = 150.0;
+    // Curva inicial do nectar, ainda precisa ser calibrada com tiros reais.
+    private static final double NECTAR_MIN_RPM = 1905, NECTAR_MAX_RPM = 1985;
+    private final DcMotorEx lshooter, rshooter, indexer;
     private final DcMotor intake;
-    private final Servo servoR;
-    private final Servo turretAjustR, turretAjustL;
-    private final ColorRangeSensor distIntake4;
-    double VelRPM = 0;
-    double rpmR = 0;
-    double correction, error, power;
-    boolean shooterAtirando;
-    boolean polen;
-    boolean nectar;
-    boolean shooterReady;
-    ElapsedTime timer = new ElapsedTime();
-    double shootTime = 0;
-
-    private static final double MIN_DIST = 45.0;
-    private static final double MAX_DIST = 55.0;
-    private static final double MIN_RPM  = 1800.0;
-    private static final double MAX_RPM  = 1850.0;
-
-    double targetRPM;
-
-    public enum EstadoShooter {
-        IDLE, POLEN, NECTAR, POLEN_L, NECTAR_L, ACCEL
-    }
-
+    private final Servo servoR, turretAjustR, turretAjustL;
+    private final VoltageSensor battery;
+    // Encoder fisico shooterL (campo rshooter) comanda a potencia dos dois motores.
+    private final ShooterRpmController sharedPid = new ShooterRpmController();
+    public enum EstadoShooter { IDLE, POLEN, NECTAR, POLEN_L, NECTAR_L, ACCEL }
     private EstadoShooter estadoAtual = EstadoShooter.IDLE;
-    private double rpmAtual = 0;
+    private long shotStart, gateStart, feedStart;
+    private boolean gateOpening, shooterReady, feeding;
+    private double targetRPM, rpmAtual, leftPower, rightPower;
+    private String feedStatus = "Repouso";
 
-    private double interpolateRpm(double distance) {
-        // Limita a distância ao intervalo calibrado
-        double d = Math.max(MIN_DIST, Math.min(distance, MAX_DIST));
+    public static double targetRpmForDistance(double distance, boolean nectar) {
+        if (!Double.isFinite(distance) || distance <= 0) return Double.NaN;
+        double d = Math.max(MIN_DIST, distance);
         double fraction = (d - MIN_DIST) / (MAX_DIST - MIN_DIST);
-        return MIN_RPM + fraction * (MAX_RPM - MIN_RPM);
+        double min = nectar ? NECTAR_MIN_RPM : MIN_RPM;
+        double max = nectar ? NECTAR_MAX_RPM : MAX_RPM;
+        return Math.min(min + fraction * (max - min), max + EXTRA_DISTANCE_RPM_LIMIT);
     }
 
     public shooterSub(HardwareMap hardwareMap, DcMotorEx indexer) {
         turretAjustR = hardwareMap.get(Servo.class, "turretAjustR");
         turretAjustL = hardwareMap.get(Servo.class, "turretAjustL");
-
-        distIntake4 = hardwareMap.get(ColorRangeSensor.class, "distIntake4");
         lshooter = hardwareMap.get(DcMotorEx.class, "shooterR");
         rshooter = hardwareMap.get(DcMotorEx.class, "shooterL");
-        this.indexer = indexer != null
-                ? indexer
-                : hardwareMap.get(DcMotorEx.class, "indexer");
+        this.indexer = indexer != null ? indexer : hardwareMap.get(DcMotorEx.class, "indexer");
         intake = hardwareMap.get(DcMotor.class, "intake");
         servoR = hardwareMap.get(Servo.class, "servoR");
-
+        battery = hardwareMap.voltageSensor.iterator().hasNext()
+                ? hardwareMap.voltageSensor.iterator().next() : null;
+        this.indexer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         this.indexer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        lshooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        rshooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-
-        lshooter.setDirection(DcMotorSimple.Direction.FORWARD);
-        rshooter.setDirection(DcMotorSimple.Direction.FORWARD);
+        for (DcMotorEx motor : new DcMotorEx[]{lshooter, rshooter}) {
+            // O PID deste codigo comanda potencia; nao empilhar com PID interno do Hub.
+            motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            motor.setDirection(DcMotorSimple.Direction.FORWARD);
+        }
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         this.indexer.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 
-    private double interpolateHiveRpm(double distance) {
-        final double minDistance = 41.0;
-        final double minRpm = 1820.0;
-        final double maxDistance = 52.0;
-        final double maxRpm = 1840.0;
-
-        if (distance <= minDistance) {
-            return minRpm;
-        }
-        if (distance >= maxDistance) {
-            return maxRpm;
-        }
-
-        double fraction = (distance - minDistance) / (maxDistance - minDistance);
-        return minRpm + fraction * (maxRpm - minRpm);
-    }
-
     public void update(Gamepad gamepad, Gamepad gamepad2, double dist,
-                       boolean intakeColetando, boolean intakeCuspindo,
-                       double distanciaHIVE) {
-        if (gamepad2.right_trigger > 0.2) {
-            estadoAtual = EstadoShooter.POLEN;
-        } else if (gamepad2.left_trigger > 0.2) {
-            estadoAtual = EstadoShooter.NECTAR;
-        } else if (gamepad2.dpad_right) {
-            estadoAtual = EstadoShooter.POLEN_L;
-//        } else if (gamepad2.dpad_left) {
-//            estadoAtual = EstadoShooter.NECTAR_L;
-//        } else if (gamepad2.right_bumper) {
-//            estadoAtual = EstadoShooter.ACCEL;
+                       boolean intakeColetando, boolean intakeCuspindo, double distanciaHIVE) {
+        updateAtTime(gamepad2, distanciaHIVE, System.nanoTime());
+    }
+
+    void updateAtTime(Gamepad gamepad2, double distanciaHIVE, long now) {
+        EstadoShooter requested = gamepad2.right_trigger > 0.2 ? EstadoShooter.POLEN
+                : gamepad2.left_trigger > 0.2 ? EstadoShooter.NECTAR
+                : gamepad2.dpad_right ? EstadoShooter.POLEN_L : EstadoShooter.IDLE;
+        // Depois de autorizado, completar pelo menos 2,5 s mesmo soltando o gatilho.
+        // Manter o tipo de bola ate encerrar este ciclo; stop() continua imediato.
+        if (gateOpening && (!feeding || now - feedStart < MIN_FEED_NS
+                || requested != EstadoShooter.IDLE)) requested = estadoAtual;
+        if (requested != estadoAtual) {
+            resetControl();
+            shotStart = now;
+            // Limpar a alimentacao ao entrar/sair do tiro, sem sobrescrever coleta em repouso.
+            indexer.setPower(0);
+            intake.setPower(0);
+        }
+        estadoAtual = requested;
+        rpmAtual = Math.abs(rshooter.getVelocity()) * 60 / TICKS_PER_REV;
+
+        if (estadoAtual == EstadoShooter.IDLE) {
+            feedStatus = "Repouso";
+            targetRPM = 0;
+            resetControl();
+            setWheelPower(0.2, 0.2);
+            servoR.setPosition(GATE_CLOSED);
+            return;
+        }
+        boolean nectar = estadoAtual == EstadoShooter.NECTAR || estadoAtual == EstadoShooter.NECTAR_L;
+        targetRPM = targetRpmForDistance(distanciaHIVE, nectar);
+        // Nao emitir zero entre ciclos de alimentacao continua.
+        if (!Double.isFinite(targetRPM) || !Double.isFinite(rpmAtual)) {
+            indexer.setPower(0);
+            intake.setPower(0);
+            feedStatus = "Distancia ou encoder invalido";
+            resetControl();
+            setWheelPower(0, 0);
+            servoR.setPosition(GATE_CLOSED);
+            return;
+        }
+        if (nectar) {
+            turretAjustL.setPosition(0.866);
+            turretAjustR.setPosition(0.32);
         } else {
-            estadoAtual = EstadoShooter.IDLE;
+            turretAjustL.setPosition(0.655);
+            turretAjustR.setPosition(0.095);
         }
-
-
-        rpmAtual = Math.abs((rshooter.getVelocity() / 28) * 60);
-        double targetRPM;
-
-        switch (estadoAtual) {
-            case IDLE:
-                shooterAtirando = false;
-                lshooter.setPower(-0.2);
-                rshooter.setPower(-0.2);
-                servoR.setPosition(0.27);
-                shooterReady = false;
-                break;
-
-            case POLEN:
-                shooterAtirando = true;
-                shootTime = System.currentTimeMillis();
-                targetRPM = interpolateRpm(distanciaHIVE);
-
-                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
-                error = targetRPM - rpmR;
-                correction = error * 0.0085;
-                power = Math.max(0, Math.min(1 + correction, 1));
-                rshooter.setPower(-power);
-                lshooter.setPower(-power);
-                turretAjustL.setPosition(0.655);
-                turretAjustR.setPosition(0.095);
-                servoR.setPosition(0.7);
-                if (rpmAtual >= targetRPM) {
-                    if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-                        indexer.setPower(-0.6);
-                        intake.setPower(-0.6);
-                    }
-                }
-                break;
-
-            case NECTAR:
-                shooterAtirando = true;
-                shootTime = System.currentTimeMillis();
-                targetRPM = 1960;
-
-                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
-                error = targetRPM - rpmR;
-                correction = error * 0.0085;
-                power = Math.max(0.05, Math.min(1 + correction, 1));
-                rshooter.setPower(-power);
-                lshooter.setPower(-power);
-                turretAjustL.setPosition(0.866);
-                turretAjustR.setPosition(0.32);
-                servoR.setPosition(0.7);
-                if (rpmAtual >= targetRPM) {
-                    if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-                        indexer.setPower(-1.0);
-                        intake.setPower(-1.0);
-                    }
-                }
-                break;
-
-            case POLEN_L:
-                shooterAtirando = true;
-                shootTime = System.currentTimeMillis();
-                targetRPM = 1850;
-
-                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
-                error = targetRPM - rpmR;
-                correction = error * 0.0085;
-                power = Math.max(0, Math.min(1 + correction, 1));
-                rshooter.setPower(-power);
-                lshooter.setPower(-power);
-                turretAjustL.setPosition(0.655);
-                turretAjustR.setPosition(0.095);
-                servoR.setPosition(0.7);
-                if (rpmAtual >= targetRPM) {
-                    if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-                        indexer.setPower(-0.6);
-                        intake.setPower(-0.6);
-                    }
-                }
-                break;
-
-            case NECTAR_L:
-                shooterAtirando = true;
-                shootTime = System.currentTimeMillis();
-                targetRPM = 2050;
-                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
-                error = targetRPM - rpmR;
-                correction = error * 0.009;
-                turretAjustR.setPosition(0.5);
-                turretAjustL.setPosition(0.29);
-                power = Math.max(0, Math.min(0.5 + correction, 1));
-                rshooter.setPower(-power);
-                lshooter.setPower(-power);
-
-                servoR.setPosition(0.15);
-                if (rpmAtual >= targetRPM) {
-                    if ((System.currentTimeMillis() + shootTime) > System.currentTimeMillis() + 100) {
-                        indexer.setPower(-0.95);
-                        intake.setPower(-0.8);
-                    }
-                }
-                break;
-
-            case ACCEL:
-                rshooter.setPower(-0.35);
-                lshooter.setPower(-0.35);
+        double voltage = battery == null ? 12 : battery.getVoltage();
+        double sharedPower = sharedPid.update(targetRPM, rpmAtual, voltage, now);
+        setWheelPower(sharedPower, sharedPower);
+        // RPM so autoriza o inicio. A queda entre bolas nao interrompe a rajada.
+        if (!shooterReady && rpmAtual >= targetRPM - RPM_TOLERANCE)
+            shooterReady = true;
+        if (!shooterReady || now - shotStart < HOOD_SETTLE_NS) {
+            indexer.setPower(0);
+            intake.setPower(0);
+            feedStatus = !shooterReady ? "Aguardando primeiro RPM: erro " + Math.round(targetRPM - rpmAtual)
+                    : "Aguardando ajustes";
+            servoR.setPosition(GATE_CLOSED);
+            return;
+        }        feedStatus = "Abrindo servo R";
+        servoR.setPosition(GATE_OPEN);
+        if (!gateOpening) {
+            gateStart = now;
+            gateOpening = true;
+            indexer.setPower(0);
+            intake.setPower(0);
+        }
+        if (now - gateStart >= GATE_OPEN_NS) {
+            if (!feeding) { feedStart = now; feeding = true; }
+            feedStatus = "Alimentacao continua: " + Math.round((now - feedStart) / 1e8) / 10.0 + " s";
+            indexer.setPower(nectar ? -1.0 : -0.6);
+            intake.setPower(nectar ? -1.0 : -0.6);
         }
     }
 
-    public boolean isAtirando() {
-        shooterAtirando = estadoAtual != EstadoShooter.IDLE;
-        return shooterAtirando;
+    private void setWheelPower(double left, double right) {
+        leftPower = left;
+        rightPower = right;
+        lshooter.setPower(-left);
+        rshooter.setPower(-right);
     }
-
-    public boolean tiroPolen() {
-        polen = estadoAtual == EstadoShooter.POLEN;
-        return polen;
+    private void resetControl() {
+        sharedPid.reset();
+        feeding = false;
+        gateOpening = false;
+        shooterReady = false;
     }
-
-    public boolean tiroNectar() {
-        nectar = estadoAtual == EstadoShooter.NECTAR;
-        return nectar;
+    public void stop() {
+        resetControl();
+        estadoAtual = EstadoShooter.IDLE;
+        targetRPM = 0;
+        setWheelPower(0, 0);
+        indexer.setPower(0);
+        intake.setPower(0);
+        servoR.setPosition(GATE_CLOSED);
     }
-
-    public double getRPM() {
-        return rpmAtual;
-    }
-
-    public String getEstado() {
-        return estadoAtual.toString();
-    }
+    public boolean ownsFeedCycle() { return gateOpening; }
+    public boolean isAtirando() { return estadoAtual != EstadoShooter.IDLE; }
+    public boolean tiroPolen() { return estadoAtual == EstadoShooter.POLEN || estadoAtual == EstadoShooter.POLEN_L; }
+    public boolean tiroNectar() { return estadoAtual == EstadoShooter.NECTAR || estadoAtual == EstadoShooter.NECTAR_L; }
+    public String getFeedStatus() { return feedStatus; }
+    public double getTargetRPM() { return targetRPM; }
+    public double getRPM() { return rpmAtual; }
+    public boolean isReady() { return shooterReady; }
+    public double getLeftPower() { return leftPower; }
+    public double getRightPower() { return rightPower; }
+    public String getEstado() { return estadoAtual.toString(); }
 }

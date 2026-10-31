@@ -79,8 +79,8 @@ public class intakeSub {
                 break;
 
             case EXPELIR:
-                indexer.setPower(0.6);
-                intake.setPower(0.6);
+                indexer.setPower(0.8);
+                intake.setPower(0.8);
                 servoIntk.setPosition(1.0);
                 break;
 

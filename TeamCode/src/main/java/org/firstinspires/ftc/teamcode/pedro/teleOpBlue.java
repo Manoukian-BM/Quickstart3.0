@@ -59,8 +59,8 @@ public class teleOpBlue extends LinearOpMode {
         servoAR = hardwareMap.get(Servo.class, "servoAR");
         servoAL = hardwareMap.get(Servo.class, "servoAL");
 
-        servoAR.setPosition(0.93);
-        servoAL.setPosition(0.83);
+        servoAR.setPosition(0.83);
+        servoAL.setPosition(0.93);
         timer = new ElapsedTime();
 
         telemetry.addLine("TeleOp pronto.");

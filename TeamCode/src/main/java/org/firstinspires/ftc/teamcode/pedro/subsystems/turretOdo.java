@@ -45,9 +45,9 @@ public class turretOdo {
     private boolean hasTarget;
     private boolean previousY;
 
-    double leftHiveX = 53.0;
+    double leftHiveX = 52.0;
     double leftHiveY = 54.0;
-    double rightHiveX = 52.0;
+    double rightHiveX = 54.0;
     double rightHiveY = 91.0;
 
     public turretOdo(HardwareMap hardwareMap, Follower follower) {
@@ -77,7 +77,7 @@ public class turretOdo {
         leftHiveDistance = distance(pose.x(), pose.y(), leftHiveX, leftHiveY);
         rightHiveDistance = distance(pose.x(), pose.y(), rightHiveX, rightHiveY);
 
-        if (pose.y() < 71.0) {
+        if (leftHiveDistance <= rightHiveDistance) {
             targetX = leftHiveX;
             targetY = leftHiveY;
             selectedHive = "Esquerda";
@@ -196,7 +196,7 @@ public class turretOdo {
         }
 
         if (gamepad2.left_bumper) {
-                alinharPelaOdometria(pose, gamepad2);
+            alinharPelaOdometria(pose, gamepad2);
         } else if (gamepad2.right_bumper) {
 //            int tagId = getVisibleHiveTagId(result);
 //

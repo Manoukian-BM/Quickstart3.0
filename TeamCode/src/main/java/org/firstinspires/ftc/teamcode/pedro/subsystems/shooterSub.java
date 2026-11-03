@@ -29,8 +29,8 @@ public class shooterSub {
 
     private static final double MIN_DIST = 41.0;
     private static final double MAX_DIST = 55.0;
-    private static final double MIN_RPM = 1790.0;
-    private static final double MAX_RPM = 1840.0;
+    private static final double MIN_RPM = 1830.0;
+    private static final double MAX_RPM = 1880.0;
     private static final double PID_KP = 0.0085;
     private static final double PID_KI = 0.0002;
     private static final double PID_KD = 0.0001;
@@ -112,9 +112,9 @@ public class shooterSub {
 
     private double interpolateHiveRpm(double distance) {
         final double minDistance = 41.0;
-        final double minRpm = 1820.0;
+        final double minRpm = 1870.0;
         final double maxDistance = 52.0;
-        final double maxRpm = 1840.0;
+        final double maxRpm = 1890.0;
 
         if (distance <= minDistance) {
             return minRpm;

@@ -128,9 +128,12 @@ public class turretOdo {
 
         servoPosition = clamp(servoPosition + correction, 0.0, 1.0);
         manualPosition = servoPosition;
-        if (follower.pose().x() < 25) {
+        if (follower.pose().x() > 94 && follower.pose().y() > 69) {
             turretR.setPosition(servoPosition - 0.08);
             turretL.setPosition(servoPosition - 0.08);
+        } else if (follower.pose().x() > 50 && follower.pose().y() < 69) {
+            turretR.setPosition(servoPosition + 0.08);
+            turretL.setPosition(servoPosition + 0.08);
         } else {
             turretR.setPosition(servoPosition);
             turretL.setPosition(servoPosition);

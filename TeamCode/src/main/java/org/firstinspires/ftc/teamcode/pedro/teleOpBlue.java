@@ -84,7 +84,10 @@ public class teleOpBlue extends LinearOpMode {
             double dI4 = distIntake4.getDistance(DistanceUnit.CM);
 
             // Atualizar a pose uma vez por ciclo, com conducao pelo Pedro.
-            follower.manual(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x);
+            // Segurar L1 do P1 reduz os tres comandos da base para 50%.
+            double driveScale = gamepad1.left_bumper ? 0.5 : 1.0;
+            follower.manual(-gamepad1.left_stick_y * driveScale,
+                    -gamepad1.left_stick_x * driveScale, -gamepad1.right_stick_x * driveScale);
             follower.update();
             Pose currentPose = follower.pose();
 

@@ -11,12 +11,14 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 public class shooterSub {
     // Preserva a conversao existente; confirmar 28 ticks por volta do eixo do shooter.
     private static final double TICKS_PER_REV = 28.0;
-    private static final double RPM_TOLERANCE = 75.0;
-    private static final long MIN_FEED_NS = 2_500_000_000L;
+    private static final double RPM_TOLERANCE = 0.0; // Liberar somente ao atingir o RPM alvo.
+    private static final long MIN_FEED_NS = 1_500_000_000L;
     private static final long HOOD_SETTLE_NS = 300_000_000L;
     private static final long GATE_OPEN_NS = 150_000_000L;
     private static final double GATE_CLOSED = 0.27, GATE_OPEN = 0.7;
     private static final double MIN_DIST = 45, MAX_DIST = 55;
+    private static final double NEAR_RPM_BONUS = 120.0;
+    private static final double BONUS_RPM_PER_5_INCHES = 10.0;
     private static final double MIN_RPM = 1770, MAX_RPM = 1850;
     // Extensao inicial alem de 55 in: calibrar no robo antes de ampliar este teto.
     private static final double EXTRA_DISTANCE_RPM_LIMIT = 150.0;
@@ -32,6 +34,7 @@ public class shooterSub {
     private EstadoShooter estadoAtual = EstadoShooter.IDLE;
     private long shotStart, gateStart, feedStart;
     private boolean gateOpening, shooterReady, feeding;
+    private boolean waitForTriggerRelease;
     private double targetRPM, rpmAtual, leftPower, rightPower;
     private String feedStatus = "Repouso";
 
@@ -41,7 +44,12 @@ public class shooterSub {
         double fraction = (d - MIN_DIST) / (MAX_DIST - MIN_DIST);
         double min = nectar ? NECTAR_MIN_RPM : MIN_RPM;
         double max = nectar ? NECTAR_MAX_RPM : MAX_RPM;
-        return Math.min(min + fraction * (max - min), max + EXTRA_DISTANCE_RPM_LIMIT);
+        double baseRPM = Math.min(min + fraction * (max - min), max + EXTRA_DISTANCE_RPM_LIMIT);
+        // Acrescimo sobre a curva base: +120 ate 45 in; mais +10 a cada 5 in adicionais.
+        // Variacao continua entre as distancias, sem somar novamente o ajuste anterior.
+        double bonusRPM = NEAR_RPM_BONUS
+                + ((d - MIN_DIST) / 5.0) * BONUS_RPM_PER_5_INCHES;
+        return baseRPM + bonusRPM;
     }
 
     public shooterSub(HardwareMap hardwareMap, DcMotorEx indexer) {
@@ -75,10 +83,18 @@ public class shooterSub {
         EstadoShooter requested = gamepad2.right_trigger > 0.2 ? EstadoShooter.POLEN
                 : gamepad2.left_trigger > 0.2 ? EstadoShooter.NECTAR
                 : gamepad2.dpad_right ? EstadoShooter.POLEN_L : EstadoShooter.IDLE;
-        // Depois de autorizado, completar pelo menos 2,5 s mesmo soltando o gatilho.
+        if (waitForTriggerRelease) {
+            if (requested == EstadoShooter.IDLE) waitForTriggerRelease = false;
+            requested = EstadoShooter.IDLE;
+        }
+        boolean feedFinished = feeding && now - feedStart >= MIN_FEED_NS;
+        if (feedFinished) {
+            waitForTriggerRelease = requested != EstadoShooter.IDLE;
+            requested = EstadoShooter.IDLE;
+        }
+        // Depois de autorizado, completar 1,5 s mesmo soltando o gatilho.
         // Manter o tipo de bola ate encerrar este ciclo; stop() continua imediato.
-        if (gateOpening && (!feeding || now - feedStart < MIN_FEED_NS
-                || requested != EstadoShooter.IDLE)) requested = estadoAtual;
+        if (!feedFinished && gateOpening && (!feeding || now - feedStart < MIN_FEED_NS)) requested = estadoAtual;
         if (requested != estadoAtual) {
             resetControl();
             shotStart = now;
@@ -140,8 +156,8 @@ public class shooterSub {
         if (now - gateStart >= GATE_OPEN_NS) {
             if (!feeding) { feedStart = now; feeding = true; }
             feedStatus = "Alimentacao continua: " + Math.round((now - feedStart) / 1e8) / 10.0 + " s";
-            indexer.setPower(nectar ? -1.0 : -0.6);
-            intake.setPower(nectar ? -1.0 : -0.6);
+            indexer.setPower(nectar ? -1.0 : -0.72);
+            intake.setPower(nectar ? -1.0 : -0.72);
         }
     }
 

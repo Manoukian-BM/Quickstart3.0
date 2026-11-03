@@ -33,6 +33,11 @@ public final class ShooterRpmController {
         previousTime = now;
         previousRpm = measuredRpm;
         double error = target - measuredRpm;
+        // Subida e recuperacao rapidas; PID normal assume nos ultimos 150 RPM.
+        if (error > 150.0) {
+            integralPower = 0;
+            return 1.0;
+        }
         if (Math.abs(error) > I_ZONE_RPM) integralPower = 0;
         double candidateI = clamp(integralPower + KI * error * dt, -MAX_I_POWER, MAX_I_POWER);
         double battery = Double.isFinite(voltage) && voltage >= 9 && voltage <= 15 ? voltage : 12;

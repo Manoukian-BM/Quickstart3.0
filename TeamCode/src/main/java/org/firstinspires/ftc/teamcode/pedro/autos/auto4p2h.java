@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
@@ -21,12 +22,7 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 public class auto4p2h extends OpMode {
 
     private static final double SHOOTER_TICKS_PER_REV = 28.0;
-    private static final double SHOOTER_KP = 0.00055;
-    private static final double SHOOTER_KI = 0.00018;
-    private static final double SHOOTER_KD = 0.00003;
-    private static final double SHOOTER_KF = 0.000055;
-    private static final double SHOOTER_MAX_INTEGRAL = 5000.0;
-    private static final long FEED_TIME_MS = 2300;
+    private static final long FEED_TIME_MS = 2200;
 
     private Follower follower;
 
@@ -42,6 +38,7 @@ public class auto4p2h extends OpMode {
     private Servo turretR;
     private Servo turretL;
     private Servo servoIntk;
+    private VoltageSensor battery;
     private DistanceSensor distIntake1;
     private DistanceSensor distIntake2;
     private DistanceSensor distIntake3;
@@ -69,13 +66,13 @@ public class auto4p2h extends OpMode {
     private final Pose coleta2 = poseFactory.of(15, 45, 181);
     private final Pose coleta2Control1 = poseFactory.of(35, 25, 0);
     private final Pose coleta2Control2 = poseFactory.of(35, 49, 0);
-    private final Pose scorePose2 = poseFactory.of(61, 128, 270);
+    private final Pose scorePose2 = poseFactory.of(61, 130, 270);
     private final Pose scorePose2Control1 = poseFactory.of(40, 49, 0);
     private final Pose scorePose2Control2 = poseFactory.of(13, 108, 0);
     private final Pose coleta3 = poseFactory.of(48, 131, 90);
     private final Pose coleta3Control1 = poseFactory.of(75, 103, 0);
     private final Pose coleta3Control2 = poseFactory.of(42, 90, 0);
-    private final Pose scorePose3 = poseFactory.of(61, 128, -90);
+    private final Pose scorePose3 = poseFactory.of(61, 130, -90);
     private final Pose scorePose3Control1 = poseFactory.of(60, 82, 0);
     private final Pose park = poseFactory.of(18, 120, -90);
 
@@ -123,6 +120,8 @@ public class auto4p2h extends OpMode {
         distIntake2 = hardwareMap.get(DistanceSensor.class, "distIntake2");
         distIntake3 = hardwareMap.get(DistanceSensor.class, "distIntake3");
         distIntake4 = hardwareMap.get(DistanceSensor.class, "distIntake4");
+        battery = hardwareMap.voltageSensor.iterator().hasNext()
+                ? hardwareMap.voltageSensor.iterator().next() : null;
 
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         indexer.setDirection(DcMotorSimple.Direction.FORWARD);
@@ -184,9 +183,9 @@ public class auto4p2h extends OpMode {
                 setPathState(10);
                 break;
 
-            case 10:
+            case 10: // tiro 1
                 if (!follower.isBusy() || isCloseToTarget(scorePose1, tolerance)) {
-                    shooter(2, 1770);
+                    shooter(2, 1840);
                 }
                 break;
 
@@ -206,17 +205,23 @@ public class auto4p2h extends OpMode {
                     intake.setPower(-1.0);
                     indexer.setPower(-0.6);
 
+                    servoAR.setPosition(0.58);
+                    servoAL.setPosition(0.58);
+
                     if (!coletando) {
                         coletando = true;
                         inicioColeta = System.currentTimeMillis();
                     }
 
-                    if (System.currentTimeMillis() - inicioColeta >= 2000) {
+                    if (System.currentTimeMillis() - inicioColeta >= 2150) {
                         intake.setPower(-0.2);
                         indexer.setPower(0);
                         coletando = false;
                         setPathState(3);
                     }
+
+                    servoAR.setPosition(0.56);
+                    servoAL.setPosition(0.56);
                 }
                 break;
 
@@ -226,9 +231,9 @@ public class auto4p2h extends OpMode {
                 setPathState(30);
                 break;
 
-            case 30:
+            case 30: // tiro 2
                 if (!follower.isBusy() || isCloseToTarget(scorePose2, tolerance)) {
-                    shooter(4, 1760);
+                    shooter(4, 1850);
                 }
                 break;
 
@@ -246,17 +251,23 @@ public class auto4p2h extends OpMode {
                     intake.setPower(-1.0);
                     indexer.setPower(-0.6);
 
+                    servoAR.setPosition(0.58);
+                    servoAL.setPosition(0.58);
+
                     if (!coletando) {
                         coletando = true;
                         inicioColeta = System.currentTimeMillis();
                     }
 
-                    if (System.currentTimeMillis() - inicioColeta >= 2000) {
+                    if (System.currentTimeMillis() - inicioColeta >= 2150) {
                         intake.setPower(-0.2);
                         indexer.setPower(0);
                         coletando = false;
                         setPathState(5);
                     }
+
+                    servoAR.setPosition(0.56);
+                    servoAL.setPosition(0.56);
                 }
                 break;
 
@@ -268,7 +279,7 @@ public class auto4p2h extends OpMode {
 
             case 50:
                 if (!follower.isBusy() || isCloseToTarget(scorePose3, tolerance)) {
-                    shooter(6, 1760);
+                    shooter(6, 1850);
                 }
                 break;
 
@@ -299,6 +310,9 @@ public class auto4p2h extends OpMode {
 
     private void shooterIdle(double idleVel) {
         resetShooterControl();
+        activeShotState = Integer.MIN_VALUE;
+        lshooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rshooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rshooter.setVelocity(-idleVel);
         lshooter.setVelocity(-idleVel);
     }
@@ -312,6 +326,8 @@ public class auto4p2h extends OpMode {
             resetShooterControl();
             activeShotState = estado;
             activeShotRpm = rpm;
+            lshooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            rshooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
 
         long now = System.nanoTime();
@@ -319,7 +335,8 @@ public class auto4p2h extends OpMode {
         rpmAtual = rightShooterRPM;
         ShooterRPM = rpmAtual;
 
-        shooterPower = shooterPid.update(rpm, rightShooterRPM, now);
+        double voltage = battery == null ? 12.0 : battery.getVoltage();
+        shooterPower = shooterPid.update(rpm, rightShooterRPM, voltage, now);
         lshooter.setPower(-shooterPower);
         rshooter.setPower(-shooterPower);
 
@@ -337,8 +354,8 @@ public class auto4p2h extends OpMode {
         }
 
         if (nowMs - feedStartTime < FEED_TIME_MS) {
-            intake.setPower(-0.65);
-            indexer.setPower(-0.65);
+            intake.setPower(-0.6);
+            indexer.setPower(-0.6);
             return;
         }
 
@@ -356,43 +373,64 @@ public class auto4p2h extends OpMode {
     }
 
     private static class ShooterPid {
-        private double integral;
+        private static final double KP = 0.00035;
+        private static final double KI = 0.00012;
+        private static final double KD = 0.000008;
+        private static final double KV = 0.00030;
+        private static final double I_ZONE_RPM = 300.0;
+        private static final double MAX_INTEGRAL_POWER = 0.12;
+        private static final double DERIVATIVE_FILTER_SECONDS = 0.04;
+        private double integralPower;
         private double previousRpm;
+        private double filteredDerivative;
         private long previousTime;
         private boolean initialized;
 
-        double update(double targetRpm, double measuredRpm, long now) {
-            double dt = initialized ? (now - previousTime) / 1_000_000_000.0 : 0.02;
-            dt = Math.max(0.001, Math.min(dt, 0.1));
-
-            double error = targetRpm - measuredRpm;
-            double derivative = initialized ? -(measuredRpm - previousRpm) / dt : 0;
-            double candidateIntegral = clamp(
-                    integral + error * dt,
-                    -SHOOTER_MAX_INTEGRAL,
-                    SHOOTER_MAX_INTEGRAL
-            );
-            double unconstrainedOutput = SHOOTER_KF * targetRpm
-                    + SHOOTER_KP * error
-                    + SHOOTER_KI * candidateIntegral
-                    + SHOOTER_KD * derivative;
-            double output = clamp(unconstrainedOutput, 0, 1);
-
-            if (unconstrainedOutput == output
-                    || (unconstrainedOutput > 1 && error < 0)
-                    || (unconstrainedOutput < 0 && error > 0)) {
-                integral = candidateIntegral;
+        double update(double targetRpm, double measuredRpm, double voltage, long now) {
+            double dt = initialized ? (now - previousTime) / 1e9 : 0;
+            if (dt <= 0 || dt > 0.1) {
+                integralPower = 0;
+                filteredDerivative = 0;
+                dt = 0;
+            } else {
+                double derivative = (measuredRpm - previousRpm) / dt;
+                double alpha = dt / (DERIVATIVE_FILTER_SECONDS + dt);
+                filteredDerivative += alpha * (derivative - filteredDerivative);
             }
 
-            previousRpm = measuredRpm;
-            previousTime = now;
             initialized = true;
-            return output;
+            previousTime = now;
+            previousRpm = measuredRpm;
+            double error = targetRpm - measuredRpm;
+            if (error > 150.0) {
+                integralPower = 0;
+                return 1.0;
+            }
+
+            if (Math.abs(error) > I_ZONE_RPM) integralPower = 0;
+            double candidateIntegral = clamp(
+                    integralPower + KI * error * dt,
+                    -MAX_INTEGRAL_POWER,
+                    MAX_INTEGRAL_POWER);
+            double validVoltage = Double.isFinite(voltage) && voltage >= 9 && voltage <= 15
+                    ? voltage : 12.0;
+            double voltageCompensation = 12.0 / validVoltage;
+            double basePower = KV * targetRpm + KP * error - KD * filteredDerivative;
+            double candidateOutput = (basePower + candidateIntegral) * voltageCompensation;
+
+            if (Math.abs(error) <= I_ZONE_RPM
+                    && ((candidateOutput >= 0 && candidateOutput <= 1)
+                    || (candidateOutput > 1 && error < 0)
+                    || (candidateOutput < 0 && error > 0))) {
+                integralPower = candidateIntegral;
+            }
+            return clamp((basePower + integralPower) * voltageCompensation, 0, 1);
         }
 
         void reset() {
-            integral = 0;
+            integralPower = 0;
             previousRpm = 0;
+            filteredDerivative = 0;
             previousTime = 0;
             initialized = false;
         }

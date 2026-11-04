@@ -107,11 +107,9 @@ public class teleOpBlue extends LinearOpMode {
             telemetry.addData("Aangulo", Math.toDegrees(currentPose.heading()));
             telemetry.addData("Tempo", timer.seconds());
             telemetry.addData("right_stick_x", gamepad2.right_stick_x);
-            telemetry.addData("RPM", shooter.getRPM());
-//            telemetry.addData("DistIntake1", dI1);
-//            telemetry.addData("DistIntake2", dI2);
-//            telemetry.addData("DistIntake3", dI3);
-//            telemetry.addData("DistIntake4", dI4);
+            telemetry.addData("RPM alvo", shooter.getTargetRPM());
+            telemetry.addData("RPM shooterL", shooter.getRPM());
+            telemetry.addData("Potencia shooters", shooter.getPower());
             telemetry.update();
         }
     }

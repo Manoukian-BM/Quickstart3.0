@@ -7,9 +7,27 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class shooterSub {
+    private static final double TICKS_PER_REV = 28.0;
+    private static final double MIN_DIST = 45.0;
+    private static final double MAX_DIST = 55.0;
+    private static final double MIN_RPM = 1795.0;
+    private static final double MAX_RPM = 1825.0;
+    private static final double NECTAR_MIN_RPM = 1900.0;
+    private static final double NECTAR_MAX_RPM = 1950.0;
+    private static final double EXTRA_DISTANCE_RPM_LIMIT = 150.0;
+    private static final double NEAR_RPM_BONUS = 120.0;
+    private static final double BONUS_RPM_PER_5_INCHES = 10.0;
+    private static final double RPM_KP = 0.00035;
+    private static final double RPM_KI = 0.00012;
+    private static final double RPM_KD = 0.000008;
+    private static final double RPM_KV = 0.00030;
+    private static final double RPM_I_ZONE = 300.0;
+    private static final double MAX_INTEGRAL_POWER = 0.12;
+    private static final double DERIVATIVE_FILTER_SECONDS = 0.04;
     private final DcMotorEx lshooter;
     private final DcMotorEx rshooter;
     private final DcMotorEx indexer;
@@ -17,6 +35,12 @@ public class shooterSub {
     private final Servo servoR;
     private final Servo turretAjustR, turretAjustL;
     private final ColorRangeSensor distIntake4;
+    private final VoltageSensor battery;
+    private double integralPower;
+    private double previousRpm;
+    private double filteredDerivative;
+    private long previousRpmTime;
+    private boolean rpmControllerInitialized;
     double VelRPM = 0;
     double rpmR = 0;
     double correction, error, power;
@@ -26,16 +50,6 @@ public class shooterSub {
     boolean shooterReady;
     ElapsedTime timer = new ElapsedTime();
     double shootTime = 0;
-
-    private static final double MIN_DIST = 41.0;
-    private static final double MAX_DIST = 55.0;
-    private static final double MIN_RPM = 1830.0;
-    private static final double MAX_RPM = 1880.0;
-    private static final double PID_KP = 0.0085;
-    private static final double PID_KI = 0.0002;
-    private static final double PID_KD = 0.0001;
-    private static final double MAX_INTEGRAL = 500.0;
-
     double targetRPM;
 
     public enum EstadoShooter {
@@ -45,46 +59,77 @@ public class shooterSub {
     private EstadoShooter estadoAtual = EstadoShooter.IDLE;
     private EstadoShooter estadoAnterior = EstadoShooter.IDLE;
     private double rpmAtual = 0;
-    private double pidIntegral = 0;
-    private double pidLastRpm = 0;
-    private long pidLastTimeNanos = 0;
 
-    private double interpolateRpm(double distance) {
-        double d = Math.max(MIN_DIST, Math.min(distance, MAX_DIST));
-        double fraction = (d - MIN_DIST) / (MAX_DIST - MIN_DIST);
-        return MIN_RPM + fraction * (MAX_RPM - MIN_RPM);
+    private void resetRpmController() {
+        integralPower = 0;
+        filteredDerivative = 0;
+        rpmControllerInitialized = false;
     }
 
-    private void resetPid() {
-        pidIntegral = 0;
-        pidLastRpm = rpmAtual;
-        pidLastTimeNanos = 0;
-    }
-
-    private double calculatePidPower(double target, double measuredRpm) {
-        long now = System.nanoTime();
-        if (pidLastTimeNanos == 0) {
-            pidLastTimeNanos = now;
-            pidLastRpm = measuredRpm;
-        }
-
-        double dt = (now - pidLastTimeNanos) / 1_000_000_000.0;
-        if (dt <= 0) {
+    private double calculateShooterPower(double target, double measuredRpm, double voltage, long now) {
+        if (!Double.isFinite(target) || target <= 0 || !Double.isFinite(measuredRpm)) {
+            resetRpmController();
             return 0;
         }
 
-        double pidError = target - measuredRpm;
-        double derivative = (measuredRpm - pidLastRpm) / dt;
-        pidIntegral = Math.max(-MAX_INTEGRAL,
-                Math.min(pidIntegral + pidError * dt, MAX_INTEGRAL));
+        double dt = rpmControllerInitialized ? (now - previousRpmTime) / 1e9 : 0;
+        if (dt <= 0 || dt > 0.1) {
+            integralPower = 0;
+            filteredDerivative = 0;
+            dt = 0;
+        } else {
+            double derivative = (measuredRpm - previousRpm) / dt;
+            double alpha = dt / (DERIVATIVE_FILTER_SECONDS + dt);
+            filteredDerivative += alpha * (derivative - filteredDerivative);
+        }
 
-        double output = PID_KP * pidError
-                + PID_KI * pidIntegral
-                - PID_KD * derivative;
+        rpmControllerInitialized = true;
+        previousRpmTime = now;
+        previousRpm = measuredRpm;
+        double rpmError = target - measuredRpm;
+        if (rpmError > 150.0) {
+            integralPower = 0;
+            return 1.0;
+        }
 
-        pidLastRpm = measuredRpm;
-        pidLastTimeNanos = now;
-        return Math.max(-1.0, Math.min(output, 1.0));
+        if (Math.abs(rpmError) > RPM_I_ZONE) integralPower = 0;
+        double candidateIntegral = clamp(
+                integralPower + RPM_KI * rpmError * dt,
+                -MAX_INTEGRAL_POWER,
+                MAX_INTEGRAL_POWER);
+        double validVoltage = Double.isFinite(voltage) && voltage >= 9 && voltage <= 15
+                ? voltage : 12.0;
+        double voltageCompensation = 12.0 / validVoltage;
+        double basePower = RPM_KV * target + RPM_KP * rpmError - RPM_KD * filteredDerivative;
+        double candidateOutput = (basePower + candidateIntegral) * voltageCompensation;
+
+        if (Math.abs(rpmError) <= RPM_I_ZONE
+                && ((candidateOutput >= 0 && candidateOutput <= 1)
+                || (candidateOutput > 1 && rpmError < 0)
+                || (candidateOutput < 0 && rpmError > 0))) {
+            integralPower = candidateIntegral;
+        }
+        return clamp((basePower + integralPower) * voltageCompensation, 0, 1);
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private double interpolateRpm(double distance, boolean nectar) {
+        return targetRpmForDistance(distance, nectar);
+    }
+
+    static double targetRpmForDistance(double distance, boolean nectar) {
+        if (!Double.isFinite(distance) || distance <= 0) return Double.NaN;
+        double d = Math.max(MIN_DIST, distance);
+        double fraction = (d - MIN_DIST) / (MAX_DIST - MIN_DIST);
+        double min = nectar ? NECTAR_MIN_RPM : MIN_RPM;
+        double max = nectar ? NECTAR_MAX_RPM : MAX_RPM;
+        double baseRpm = Math.min(min + fraction * (max - min), max + EXTRA_DISTANCE_RPM_LIMIT);
+        double bonusRpm = NEAR_RPM_BONUS
+                + ((d - MIN_DIST) / 5.0) * BONUS_RPM_PER_5_INCHES;
+        return baseRpm + bonusRpm;
     }
 
     public shooterSub(HardwareMap hardwareMap, DcMotorEx indexer) {
@@ -99,32 +144,19 @@ public class shooterSub {
                 : hardwareMap.get(DcMotorEx.class, "indexer");
         intake = hardwareMap.get(DcMotor.class, "intake");
         servoR = hardwareMap.get(Servo.class, "servoR");
+        battery = hardwareMap.voltageSensor.iterator().hasNext()
+                ? hardwareMap.voltageSensor.iterator().next() : null;
 
         this.indexer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lshooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         rshooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
+        lshooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rshooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         lshooter.setDirection(DcMotorSimple.Direction.FORWARD);
         rshooter.setDirection(DcMotorSimple.Direction.FORWARD);
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         this.indexer.setDirection(DcMotorSimple.Direction.FORWARD);
-    }
-
-    private double interpolateHiveRpm(double distance) {
-        final double minDistance = 41.0;
-        final double minRpm = 1870.0;
-        final double maxDistance = 52.0;
-        final double maxRpm = 1890.0;
-
-        if (distance <= minDistance) {
-            return minRpm;
-        }
-        if (distance >= maxDistance) {
-            return maxRpm;
-        }
-
-        double fraction = (distance - minDistance) / (maxDistance - minDistance);
-        return minRpm + fraction * (maxRpm - minRpm);
     }
 
     public void update(Gamepad gamepad, Gamepad gamepad2, double dist,
@@ -140,15 +172,39 @@ public class shooterSub {
             estadoAtual = EstadoShooter.IDLE;
         }
 
-        rpmAtual = Math.abs((rshooter.getVelocity() / 28) * 60);
+        rpmAtual = Math.abs(rshooter.getVelocity()) * 60.0 / TICKS_PER_REV;
         if (estadoAtual != estadoAnterior) {
-            resetPid();
+            resetRpmController();
             estadoAnterior = estadoAtual;
+        }
+
+        boolean nectar = estadoAtual == EstadoShooter.NECTAR || estadoAtual == EstadoShooter.NECTAR_L;
+        boolean shooting = estadoAtual == EstadoShooter.POLEN || estadoAtual == EstadoShooter.NECTAR
+                || estadoAtual == EstadoShooter.POLEN_L || estadoAtual == EstadoShooter.NECTAR_L;
+        if (shooting) {
+            targetRPM = interpolateRpm(distanciaHIVE, nectar);
+            if (!Double.isFinite(targetRPM) || !Double.isFinite(rpmAtual)) {
+                power = 0;
+                rshooter.setPower(0);
+                lshooter.setPower(0);
+                indexer.setPower(0);
+                intake.setPower(0);
+                servoR.setPosition(0.27);
+                return;
+            }
+            double voltage = battery == null ? 12.0 : battery.getVoltage();
+            power = calculateShooterPower(targetRPM, rpmAtual, voltage, System.nanoTime());
+            rshooter.setPower(-power);
+            lshooter.setPower(-power);
+        } else {
+            targetRPM = 0;
+            resetRpmController();
         }
 
         switch (estadoAtual) {
             case IDLE:
                 shooterAtirando = false;
+                power = 0.2;
                 lshooter.setPower(-0.2);
                 rshooter.setPower(-0.2);
                 servoR.setPosition(0.27);
@@ -158,13 +214,6 @@ public class shooterSub {
             case POLEN:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = interpolateRpm(distanciaHIVE);
-
-                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
-                error = targetRPM - rpmR;
-                power = calculatePidPower(targetRPM, rpmR);
-                rshooter.setPower(-power);
-                lshooter.setPower(-power);
                 turretAjustL.setPosition(0.655);
                 turretAjustR.setPosition(0.095);
                 servoR.setPosition(0.7);
@@ -179,14 +228,6 @@ public class shooterSub {
             case NECTAR:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = 1960;
-
-                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
-                error = targetRPM - rpmR;
-                correction = error * 0.0085;
-                power = Math.max(0.05, Math.min(1 + correction, 1));
-                rshooter.setPower(-power);
-                lshooter.setPower(-power);
                 turretAjustL.setPosition(0.866);
                 turretAjustR.setPosition(0.32);
                 servoR.setPosition(0.7);
@@ -201,14 +242,6 @@ public class shooterSub {
             case POLEN_L:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = 1850;
-
-                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
-                error = targetRPM - rpmR;
-                correction = error * 0.0085;
-                power = Math.max(0, Math.min(1 + correction, 1));
-                rshooter.setPower(-power);
-                lshooter.setPower(-power);
                 turretAjustL.setPosition(0.655);
                 turretAjustR.setPosition(0.095);
                 servoR.setPosition(0.7);
@@ -223,15 +256,8 @@ public class shooterSub {
             case NECTAR_L:
                 shooterAtirando = true;
                 shootTime = System.currentTimeMillis();
-                targetRPM = 2050;
-                rpmR = Math.abs(rshooter.getVelocity() / 28) * 60.0;
-                error = targetRPM - rpmR;
-                correction = error * 0.009;
                 turretAjustR.setPosition(0.5);
                 turretAjustL.setPosition(0.29);
-                power = Math.max(0, Math.min(0.5 + correction, 1));
-                rshooter.setPower(-power);
-                lshooter.setPower(-power);
 
                 servoR.setPosition(0.15);
                 if (rpmAtual >= targetRPM) {
@@ -243,8 +269,10 @@ public class shooterSub {
                 break;
 
             case ACCEL:
+                power = 0.35;
                 rshooter.setPower(-0.35);
                 lshooter.setPower(-0.35);
+                targetRPM = 0;
         }
     }
 
@@ -273,5 +301,9 @@ public class shooterSub {
 
     public double getTargetRPM() {
         return targetRPM;
+    }
+
+    public double getPower() {
+        return power;
     }
 }

@@ -128,16 +128,16 @@ public class turretOdo {
 
         servoPosition = clamp(servoPosition + correction, 0.0, 1.0);
         manualPosition = servoPosition;
-        if (follower.pose().x() > 94 && follower.pose().y() > 69) {
-            turretR.setPosition(servoPosition - 0.08);
-            turretL.setPosition(servoPosition - 0.08);
-        } else if (follower.pose().x() > 50 && follower.pose().y() < 69) {
-            turretR.setPosition(servoPosition + 0.08);
-            turretL.setPosition(servoPosition + 0.08);
-        } else {
-            turretR.setPosition(servoPosition);
-            turretL.setPosition(servoPosition);
-        }
+//        if (follower.pose().x() > 94 && follower.pose().y() > 69) {
+//            turretR.setPosition(servoPosition - 0.08);
+//            turretL.setPosition(servoPosition - 0.08);
+//        } else if (follower.pose().x() > 50 && follower.pose().y() < 69) {
+//            turretR.setPosition(servoPosition + 0.08);
+//            turretL.setPosition(servoPosition + 0.08);
+//        } else {
+        turretR.setPosition(servoPosition);
+        turretL.setPosition(servoPosition);
+//    }
     }
 
     private void alinharPelaOdometria(Pose pose, Gamepad gamepad2) {
@@ -179,11 +179,13 @@ public class turretOdo {
             follower.setX(9.1);
             follower.setY(130.4);
             follower.setHeading(Math.toRadians(90.0));
-//            leftHiveX = follower.pose().x();
-//            leftHiveY = follower.pose().y() + 37;
-//            rightHiveX = follower.pose().x();
-//            rightHiveY = follower.pose().y();
         }
+
+        if (gamepad.dpad_left) {
+            follower.setX(11);
+            follower.setY(34);
+            follower.setHeading(Math.toRadians(180.0));
+            }
 
         LLResult result = limelight.getLatestResult();
         if (gamepad2.y && !previousY) {

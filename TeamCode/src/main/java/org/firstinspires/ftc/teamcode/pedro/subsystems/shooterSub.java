@@ -14,10 +14,10 @@ public class shooterSub {
     private static final double TICKS_PER_REV = 28.0;
     private static final double MIN_DIST = 45.0;
     private static final double MAX_DIST = 55.0;
-    private static final double MIN_RPM = 1795.0;
-    private static final double MAX_RPM = 1825.0;
-    private static final double NECTAR_MIN_RPM = 1900.0;
-    private static final double NECTAR_MAX_RPM = 1950.0;
+    private static final double MIN_RPM = 1775.0;
+    private static final double MAX_RPM = 1805.0;
+    private static final double NECTAR_MIN_RPM = 1890.0;
+    private static final double NECTAR_MAX_RPM = 1940.0;
     private static final double EXTRA_DISTANCE_RPM_LIMIT = 150.0;
     private static final double NEAR_RPM_BONUS = 120.0;
     private static final double BONUS_RPM_PER_5_INCHES = 10.0;
@@ -87,7 +87,7 @@ public class shooterSub {
         previousRpmTime = now;
         previousRpm = measuredRpm;
         double rpmError = target - measuredRpm;
-        if (rpmError > 150.0) {
+        if (rpmError > 500.0) {
             integralPower = 0;
             return 1.0;
         }
@@ -117,7 +117,7 @@ public class shooterSub {
     }
 
     private double interpolateRpm(double distance, boolean nectar) {
-        return targetRpmForDistance(distance, nectar);
+        return targetRpmForDistance(distance, nectar) - 10.0;
     }
 
     static double targetRpmForDistance(double distance, boolean nectar) {
@@ -162,7 +162,7 @@ public class shooterSub {
     public void update(Gamepad gamepad, Gamepad gamepad2, double dist,
                        boolean intakeColetando, boolean intakeCuspindo,
                        double distanciaHIVE) {
-        if (gamepad2.right_trigger > 0.2) {
+        if (gamepad2.right_trigger > 0.2 || gamepad.cross) {
             estadoAtual = EstadoShooter.POLEN;
         } else if (gamepad2.left_trigger > 0.2) {
             estadoAtual = EstadoShooter.NECTAR;

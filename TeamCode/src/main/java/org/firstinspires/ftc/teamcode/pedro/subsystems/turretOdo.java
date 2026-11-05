@@ -45,9 +45,9 @@ public class turretOdo {
     private boolean hasTarget;
     private boolean previousY;
 
-    double leftHiveX = 52.0;
+    double leftHiveX = 55.0;
     double leftHiveY = 54.0;
-    double rightHiveX = 54.0;
+    double rightHiveX = 55.0;
     double rightHiveY = 91.0;
 
     public turretOdo(HardwareMap hardwareMap, Follower follower) {

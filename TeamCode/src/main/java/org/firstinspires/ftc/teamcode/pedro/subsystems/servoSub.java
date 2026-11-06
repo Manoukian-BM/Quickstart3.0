@@ -15,7 +15,7 @@ public class servoSub {
 
     private boolean previousA = false;
     private boolean previousB = false;
-    boolean flower = false;
+    private boolean armRaised = true;
     boolean nectar = false;
 
 
@@ -29,6 +29,12 @@ public class servoSub {
         servoR = hardwareMap.get(Servo.class, "servoR");
     }
 
+    public void setArmRaised(boolean raised) {
+        armRaised = raised;
+        servoAR.setPosition(raised ? 1.00 : 0.86);
+        servoAL.setPosition(raised ? 1.00 : 0.86);
+    }
+
     public void update(Gamepad gamepad, Gamepad gamepad2, boolean polen, boolean nectar) {
 
 //            if (gamepad.b && !previousB) {
@@ -40,11 +46,7 @@ public class servoSub {
 //            }
 
         if (gamepad2.b && !previousA) {
-            flower = !flower;
-            double position = flower ? 0.56 : 0.83; // cima: 0.83, abaixo: 0.56
-
-            servoAL.setPosition(position + 0.1);
-            servoAR.setPosition(position);
+            setArmRaised(!armRaised);
         }
 
 

@@ -4,26 +4,13 @@ package org.firstinspires.ftc.teamcode.pedro.subsystems;
 public final class TurretGeometry {
     public static final double FORWARD_OFFSET_MM = -90.0;
     public static final double LEFT_OFFSET_MM = 0.0;
-    public static final double FIELD_CENTER_Y_IN = BlueHiveField.CENTER_Y_IN;
     private static final double AUDIENCE_LEFT_REDUCTION_DEGREES = 12.0;
     private static final double LATERAL_TRANSITION_IN = 6.0;
-    /** Convencao de lados ja usada pelo TeleOp: Y menor = esquerda. */
-    public static double fieldCorrectionRadians(double robotY) {
-        if (!Double.isFinite(robotY)) return Double.NaN;
-        if (robotY < FIELD_CENTER_Y_IN) return Math.toRadians(-2.5);
-        if (robotY > FIELD_CENTER_Y_IN) return Math.toRadians(2.5);
-        return 0.0;
-    }
-    /**
-     * Calibracao solicitada para 38-41 no lado de menor X da foto.
-     * Reduz 3 graus anti-horarios; o mesmo ajuste vale com qualquer heading.
-     * Nos 6 in proximos ao alinhamento lateral, entra progressivamente para nao saltar.
-     * O outro lado lateral, a linha central e a abertura 42-45 mantem o ajuste anterior.
-     */
-    public static double fieldCorrectionRadians(double robotX, double robotY) {
-        if (!Double.isFinite(robotX) || !Double.isFinite(robotY)) return Double.NaN;
-        double base=fieldCorrectionRadians(robotY);
-        if (robotY<=FIELD_CENTER_Y_IN) return base;
+    /** Aplica a calibracao lateral da abertura selecionada, mesmo junto a linha central. */
+    public static double fieldCorrectionRadians(double robotX, boolean audienceOpening) {
+        if (!Double.isFinite(robotX)) return Double.NaN;
+        if (!audienceOpening) return Math.toRadians(-2.5);
+        double base = Math.toRadians(2.5);
         double factor=Math.max(0.0,Math.min(1.0,
                 (BlueHiveField.BLUE_X_IN-robotX)/LATERAL_TRANSITION_IN));
         return base-Math.toRadians(AUDIENCE_LEFT_REDUCTION_DEGREES)*factor;

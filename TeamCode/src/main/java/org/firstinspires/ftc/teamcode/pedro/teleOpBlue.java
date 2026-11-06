@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -29,8 +28,6 @@ public class teleOpBlue extends LinearOpMode {
     private Follower follower;
     private ElapsedTime timer;
     private long lastTelemetryNs;
-    private Servo servoAR;
-    private Servo servoAL;
     private DistanceSensor distIntake1;
     private DistanceSensor distIntake2;
     private DistanceSensor distIntake3;
@@ -57,16 +54,13 @@ public class teleOpBlue extends LinearOpMode {
         distIntake2 = hardwareMap.get(DistanceSensor.class, "distIntake2");
         distIntake3 = hardwareMap.get(DistanceSensor.class, "distIntake3");
         distIntake4 = hardwareMap.get(DistanceSensor.class, "distIntake4");
-        servoAR = hardwareMap.get(Servo.class, "servoAR");
-        servoAL = hardwareMap.get(Servo.class, "servoAL");
 
         // Mesma posicao de subir usada pelo botao do P2 em servoSub.
-        servoAR.setPosition(0.83);
-        servoAL.setPosition(0.93);
+        servo.setArmRaised(true);
         timer = new ElapsedTime();
 
         telemetry.addLine("TeleOp pronto. P1 D-pad direito: reset na marca (9.1,130.4,90 graus).");
-        telemetry.addLine("P2 R3: manual/automatico. Triangulo: ajuste fino pelas 4 tags azuis.");
+        telemetry.addLine("Segure LB do P2 para acompanhar o alvo. R1 ajusta pelas duas tags do meio. R3 alterna o modo manual.");
         telemetry.update();
         waitForStart();
 
@@ -89,34 +83,28 @@ public class teleOpBlue extends LinearOpMode {
             follower.manual(-gamepad1.left_stick_y * driveScale,
                     -gamepad1.left_stick_x * driveScale, -gamepad1.right_stick_x * driveScale);
             follower.update();
-            Pose currentPose = follower.pose();
 
             turret.update(gamepad1, gamepad2);
             double distanciaHive = turretOdo.getDist();
 
             servo.update(gamepad1, gamepad2, shooter.tiroPolen(), shooter.tiroPolen());
             boolean tiroSolicitado = gamepad2.right_trigger > 0.2 || gamepad2.left_trigger > 0.2
-                    || gamepad2.dpad_right || shooter.ownsFeedCycle();
+                    || shooter.ownsFeedCycle();
             intake.update(gamepad1, gamepad2, tiroSolicitado, dI1, dI2, dI3, dI4);
-            shooter.update(gamepad1, gamepad2, turretOdo.getDist(), intake.isColetando(),
-                    intake.isCuspindo(), turretOdo.getDist());
+            shooter.update(gamepad1, gamepad2, distanciaHive, intake.isColetando(),
+                    intake.isCuspindo(), distanciaHive);
             // Os motores de conducao sao comandados pelo follower acima.
 
             long telemetryNow=System.nanoTime();
             if (telemetryNow-lastTelemetryNs>=200_000_000L) {
             lastTelemetryNs=telemetryNow;
             turret.addDiagnostics(telemetry);
-            telemetry.addData("Modo da mira (P2 R3)", turret.getEstado());
-            telemetry.addData("HIVE escolhida", turret.getSelectedHive());
-            telemetry.addData("Distancia da HIVE", turret.getDist());
+            telemetry.addData("Distancia usada pelo RPM (cm)", "%.1f", distanciaHive * 2.54);
             telemetry.addData("Distancia HIVE esquerda", turret.getLeftHiveDistance());
             telemetry.addData("Distancia HIVE direita", turret.getRightHiveDistance());
             telemetry.addData("Angulo relativo", turret.getAngleDegrees());
             telemetry.addData("Posicao do servo", turret.getServoPosition());
             telemetry.addData("Follower ocupado", follower.isBusy());
-            telemetry.addData("X", currentPose.x());
-            telemetry.addData("Y", currentPose.y());
-            telemetry.addData("Aangulo", Math.toDegrees(currentPose.heading()));
             telemetry.addData("Tempo", timer.seconds());
             telemetry.addData("right_stick_x", gamepad2.right_stick_x);
             telemetry.addData("RPM alvo pela odometria", shooter.getTargetRPM());

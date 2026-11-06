@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.pedro.autos;
 import static com.pedropathing.api.Paths.curve;
 import static com.pedropathing.api.Paths.line;
 
+import com.pedropathing.api.Paths;
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
@@ -18,8 +19,8 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
-@Autonomous
-public class auto4p2h extends OpMode {
+@Autonomous(name = "Auto 8P2H")
+public class auto8p2h extends OpMode {
 
     private static final double SHOOTER_TICKS_PER_REV = 28.0;
     private static final long FEED_TIME_MS = 2200;
@@ -53,7 +54,6 @@ public class auto4p2h extends OpMode {
     private boolean alimentando;
     private boolean coletando;
     private long inicioColeta;
-    private boolean atirando;
     private long feedStartTime;
     private int activeShotState = Integer.MIN_VALUE;
     private int activeShotRpm;
@@ -62,43 +62,29 @@ public class auto4p2h extends OpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose startPose = poseFactory.of(56, 9.5, 90);
-    private final Pose scorePose1 = poseFactory.of(58, 11, 90);
-    private final Pose coleta2 = poseFactory.of(15, 48, 181);
-    private final Pose coleta2Control1 = poseFactory.of(35, 28, 0);
-    private final Pose coleta2Control2 = poseFactory.of(35, 53, 0);
-    private final Pose scorePose2 = poseFactory.of(61, 130, 270);
-    private final Pose scorePose2Control1 = poseFactory.of(40, 49, 0);
-    private final Pose scorePose2Control2 = poseFactory.of(13, 108, 0);
-    private final Pose coleta3 = poseFactory.of(52, 130, 90);
-    private final Pose coleta3Control1 = poseFactory.of(77, 103, 0);
-    private final Pose coleta3Control2 = poseFactory.of(44, 90, 0);
-    private final Pose scorePose3 = poseFactory.of(61, 130, -90);
-    private final Pose scorePose3Control1 = poseFactory.of(60, 82, 0);
-    private final Pose park = poseFactory.of(18, 120, -90);
+    private final Pose startPose = poseFactory.of(32, 130, 90);
+    private final Pose tiro1 = poseFactory.of(32, 127, 90);
+    private final Pose coleta = poseFactory.of(40, 115, 90);
+    private final Pose coletaControl1 = poseFactory.of(32, 122, 0);
+    private final Pose tiro2 = poseFactory.of(46.7, 130, 90);
+    private final Pose tiro2Control1 = poseFactory.of(47.0274, 117.6367, 0);
+    private final Pose park = poseFactory.of(14.2439, 120.5177, 90);
+    private final Pose parkControl1 = poseFactory.of(47.1013, 118.9202, 0);
 
-    public Path scorePose() {
-        return line(startPose, scorePose1).constant(scorePose1);
+    public Path tiro1() {
+        return Paths.line(startPose, tiro1).constant(tiro1);
     }
 
-    public Path coleta2() {
-        return curve(scorePose1, coleta2Control1, coleta2Control2, coleta2).linear(scorePose1, coleta2);
+    public Path coleta() {
+        return Paths.curve(tiro1, coletaControl1, coleta).constant(coleta);
     }
 
-    public Path scorePose2() {
-        return curve(coleta2, scorePose2Control1, scorePose2Control2, scorePose2).linear(coleta2, scorePose2);
-    }
-
-    public Path coleta3() {
-        return curve(scorePose2, coleta3Control1, coleta3Control2, coleta3).linear(scorePose2, coleta3);
-    }
-
-    public Path scorePose3() {
-        return curve(coleta3, scorePose3Control1, scorePose3).linear(coleta3, scorePose3);
+    public Path tiro2() {
+        return Paths.curve(coleta, tiro2Control1, tiro2).constant(tiro2);
     }
 
     public Path park() {
-        return line(scorePose3, park).constant(park);
+        return Paths.curve(tiro2, parkControl1, park).constant(park);
     }
 
     @Override
@@ -129,8 +115,8 @@ public class auto4p2h extends OpMode {
         lshooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rshooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        turretR.setPosition(0.5);
-        turretL.setPosition(0.5);
+        turretR.setPosition(0.9);
+        //turretL.setPosition(0);
     }
 
     @Override
@@ -180,30 +166,28 @@ public class auto4p2h extends OpMode {
             case 0:
                 rshooter.setVelocity(-idleVel);
                 lshooter.setVelocity(-idleVel);
-                follower.follow(scorePose());
+                follower.follow(tiro1());
                 setPathState(10);
                 break;
 
-            case 10: // tiro 1
-                shooter(2, 1840, !follower.isBusy() || isCloseToTarget(scorePose1, tolerance));
+            case 10:
+                shooter(2, 1825, !follower.isBusy() || isCloseToTarget(tiro1, tolerance));
                 break;
 
             case 2:
-                atirando = false;
                 intake.setPower(-1.0);
                 indexer.setPower(-1.0);
                 servoR.setPosition(0.3);
                 servoIntk.setPosition(1.0);
                 shooterIdle(idleVel);
-                follower.follow(coleta2());
+                follower.follow(coleta());
                 setPathState(20);
                 break;
 
             case 20:
-                if (!follower.isBusy() || isCloseToTarget(coleta2, tolerance)) {
+                if (!follower.isBusy() || isCloseToTarget(coleta, tolerance)) {
                     intake.setPower(-1.0);
                     indexer.setPower(-0.6);
-
                     servoAR.setPosition(0.58);
                     servoAL.setPosition(0.58);
 
@@ -226,87 +210,46 @@ public class auto4p2h extends OpMode {
 
             case 3:
                 indexer.setPower(0);
-                follower.follow(scorePose2());
+                follower.follow(tiro2());
                 setPathState(30);
                 break;
 
-            case 30: // tiro 2
-                boolean chegouNaPosicao = !follower.isBusy()
-                        || isCloseToTarget(scorePose2, tolerance);
-                if (chegouNaPosicao
-                        || isCloseToTarget(scorePose2, SHOOTER_SPINUP_DISTANCE)) {
-                    shooter(4, 1850, chegouNaPosicao);
+            case 30:
+                boolean chegou = !follower.isBusy()
+                        || isCloseToTarget(tiro2, tolerance);
+                if (chegou
+                        || isCloseToTarget(tiro2, SHOOTER_SPINUP_DISTANCE)) {
+                    turretR.setPosition(0.92);
+                    shooter(4, 1825, chegou);
                 }
                 break;
 
             case 4:
-                atirando = false;
-                indexer.setPower(-1.0);
-                intake.setPower(-1.0);
-                servoR.setPosition(0.3);
-                shooterIdle(idleVel);
-                follower.follow(coleta3());
-                setPathState(40);
-                break;
-
-            case 40:
-                if (!follower.isBusy() || isCloseToTarget(coleta3, 1.5)) {
-                    intake.setPower(-1.0);
-                    indexer.setPower(-0.6);
-
-                    servoAR.setPosition(0.58);
-                    servoAL.setPosition(0.58);
-
-                    if (!coletando) {
-                        coletando = true;
-                        inicioColeta = System.currentTimeMillis();
-                    }
-
-                    if (System.currentTimeMillis() - inicioColeta >= 2150) {
-                        intake.setPower(-0.2);
-                        indexer.setPower(0);
-                        coletando = false;
-                        setPathState(5);
-                    }
-
-                    servoAR.setPosition(0.56);
-                    servoAL.setPosition(0.56);
-                }
-                break;
-
-            case 5:
-                indexer.setPower(0);
-                follower.follow(scorePose3());
-                setPathState(50);
-                break;
-
-            case 50:
-                shooter(6, 1850, !follower.isBusy() || isCloseToTarget(scorePose3, tolerance));
-                break;
-
-            case 6:
-                atirando = false;
                 intake.setPower(0);
                 indexer.setPower(0);
                 servoR.setPosition(0.3);
                 shooterIdle(idleVel);
                 follower.follow(park());
-                setPathState(500);
+                setPathState(50);
                 break;
 
-            case 500:
-                follower.follow(park());
-                rshooter.setPower(0);
-                lshooter.setPower(0);
-                setPathState(500);
-                break;
-
-            case 501:
+            case 50:
                 if (!follower.isBusy() || isCloseToTarget(park, tolerance)) {
-                    setPathState(-1);
+                    rshooter.setPower(0);
+                    lshooter.setPower(0);
+                    setPathState(51);
                 }
                 break;
+
+            case 51:
+                intake.setPower(0);
+                indexer.setPower(0);
+                rshooter.setPower(0);
+                lshooter.setPower(0);
+                setPathState(-1);
+                break;
         }
+
     }
 
     private void shooterIdle(double idleVel) {
@@ -344,7 +287,7 @@ public class auto4p2h extends OpMode {
         long nowMs = System.currentTimeMillis();
 
         if (!alimentando) {
-            if (!podeAlimentar || (estado != 6 && rightShooterRPM < rpm)) {
+            if (!podeAlimentar || rightShooterRPM < rpm) {
                 intake.setPower(0);
                 indexer.setPower(0);
                 return;
@@ -362,7 +305,6 @@ public class auto4p2h extends OpMode {
 
         intake.setPower(0);
         indexer.setPower(0);
-        atirando = false;
         setPathState(estado);
         resetShooterControl();
     }

@@ -45,9 +45,9 @@ public class turretOdo {
     private boolean hasTarget;
     private boolean previousY;
 
-    double leftHiveX = 55.0;
+    double leftHiveX = 54.0;
     double leftHiveY = 54.0;
-    double rightHiveX = 55.0;
+    double rightHiveX = 56.0;
     double rightHiveY = 91.0;
 
     public turretOdo(HardwareMap hardwareMap, Follower follower) {
@@ -61,7 +61,7 @@ public class turretOdo {
         this.limelight.pipelineSwitch(0);
         this.limelight.start();
         turretR.setPosition(CENTRO);
-        turretL.setPosition(CENTRO);
+        //turretL.setPosition(CENTRO);
         previousUpdateNanos = System.nanoTime();
 
         limelight.pipelineSwitch(1);
@@ -162,10 +162,10 @@ public class turretOdo {
         manualPosition = servoPosition;
         if (y > 69) {
             turretR.setPosition(servoPosition - 0.05);
-            turretL.setPosition(servoPosition - 0.05);
+            //turretL.setPosition(servoPosition - 0.05);
         } else if (y <= 69) {
             turretR.setPosition(servoPosition);
-            turretL.setPosition(servoPosition);
+            //turretL.setPosition(servoPosition);
         }
     }
 
@@ -232,7 +232,7 @@ public class turretOdo {
         }
         servoPosition = manualPosition;
         turretR.setPosition(servoPosition);
-        turretL.setPosition(servoPosition);
+        //turretL.setPosition(servoPosition);
     }
 
     public static double distance(double x1, double y1, double x2, double y2) {

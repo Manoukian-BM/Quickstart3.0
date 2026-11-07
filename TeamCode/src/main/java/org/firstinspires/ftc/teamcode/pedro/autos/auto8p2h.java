@@ -19,7 +19,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
-@Autonomous(name = "Auto 8P2H")
+@Autonomous
 public class auto8p2h extends OpMode {
 
     private static final double SHOOTER_TICKS_PER_REV = 28.0;
@@ -57,6 +57,7 @@ public class auto8p2h extends OpMode {
     private long feedStartTime;
     private int activeShotState = Integer.MIN_VALUE;
     private int activeShotRpm;
+    private long inicioAtraso;
 
     private final ShooterPid shooterPid = new ShooterPid();
 
@@ -71,12 +72,9 @@ public class auto8p2h extends OpMode {
     private final Pose park = poseFactory.of(14.2439, 120.5177, 90);
     private final Pose parkControl1 = poseFactory.of(47.1013, 118.9202, 0);
 
-    public Path tiro1() {
-        return Paths.line(startPose, tiro1).constant(tiro1);
-    }
 
     public Path coleta() {
-        return Paths.curve(tiro1, coletaControl1, coleta).constant(coleta);
+        return Paths.curve(startPose, coletaControl1, coleta).constant(coleta);
     }
 
     public Path tiro2() {
@@ -116,19 +114,30 @@ public class auto8p2h extends OpMode {
         rshooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         turretR.setPosition(0.9);
-        //turretL.setPosition(0);
+        turretL.setPosition(0.9);
     }
 
     @Override
     public void start() {
         follower.setPose(startPose);
         pathState = 0;
+        inicioAtraso = System.currentTimeMillis();
     }
 
     @Override
     public void loop() {
-        follower.update();
-        autonomousPathUpdate();
+        long tempoDecorrido = System.currentTimeMillis() - inicioAtraso;
+        if (tempoDecorrido > 10000) {
+            telemetry.addData("Iniciando em", (10000 - tempoDecorrido) / 1000.0);
+            telemetry.update();
+            follower.update();
+            autonomousPathUpdate();
+        } else {
+            telemetry.addData("Iniciando em", (10000 - tempoDecorrido) / 1000.0);
+            telemetry.update();
+        }
+//        follower.update();
+//        autonomousPathUpdate();
 
         telemetry.addData("path state", pathState);
         telemetry.addData("X", follower.pose().x());
@@ -140,6 +149,9 @@ public class auto8p2h extends OpMode {
         telemetry.addData("Potencia shooter", shooterPower);
         telemetry.addData("Alimentando", alimentando);
         telemetry.update();
+
+        turretR.setPosition(0.9);
+        turretL.setPosition(0.9);
     }
 
     public void setPathState(int pState) {
@@ -157,8 +169,8 @@ public class auto8p2h extends OpMode {
     public void autonomousPathUpdate() {
         double tolerance = 1.0;
         double idleVel = (180 * SHOOTER_TICKS_PER_REV) / 60.0;
-        servoAR.setPosition(0.56);
-        servoAL.setPosition(0.66);
+        servoAR.setPosition(0.5);
+        servoAL.setPosition(0.6);
         turretAjustL.setPosition(0.08);
         turretAjustR.setPosition(0.08);
 
@@ -166,7 +178,6 @@ public class auto8p2h extends OpMode {
             case 0:
                 rshooter.setVelocity(-idleVel);
                 lshooter.setVelocity(-idleVel);
-                follower.follow(tiro1());
                 setPathState(10);
                 break;
 
@@ -185,6 +196,13 @@ public class auto8p2h extends OpMode {
                 break;
 
             case 20:
+                indexer.setPower(0);
+                follower.follow(tiro2());
+                setPathState(3);
+                break;
+
+
+            case 3:
                 if (!follower.isBusy() || isCloseToTarget(coleta, tolerance)) {
                     intake.setPower(-1.0);
                     indexer.setPower(-0.6);
@@ -200,18 +218,12 @@ public class auto8p2h extends OpMode {
                         intake.setPower(-0.2);
                         indexer.setPower(0);
                         coletando = false;
-                        setPathState(3);
+                        setPathState(30);
                     }
 
                     servoAR.setPosition(0.56);
                     servoAL.setPosition(0.56);
                 }
-                break;
-
-            case 3:
-                indexer.setPower(0);
-                follower.follow(tiro2());
-                setPathState(30);
                 break;
 
             case 30:
@@ -220,6 +232,7 @@ public class auto8p2h extends OpMode {
                 if (chegou
                         || isCloseToTarget(tiro2, SHOOTER_SPINUP_DISTANCE)) {
                     turretR.setPosition(0.92);
+                    turretL.setPosition(0.92);
                     shooter(4, 1825, chegou);
                 }
                 break;

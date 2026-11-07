@@ -45,6 +45,8 @@ public class intakeSub {
                        double distIntake1Val, double distIntake2Val,
                        double distIntake3Val, double distIntake4Val) {
 
+        // O shooter controla os motores durante aceleracao, espera e disparo.
+        if (shooterAtivo) return;
         recemCarregado = false;
         if (gamepad1.square) {
             estadoAtual = EstadoIntake.EXPELIR;
@@ -59,15 +61,15 @@ public class intakeSub {
 
         switch (estadoAtual) {
             case IDLE:
+                intake.setPower(0);
                 //indexer.setPower(0);
                 if (!shooterAtivo) {
                     indexer.setPower(0);
-                    intake.setPower(0);
                 }
                 if (!shooterAtivo) {
-                servoIntk.setPosition(0.65);
+                    servoIntk.setPosition(0.65);
                 } else {
-                servoIntk.setPosition(1.0);
+                    servoIntk.setPosition(1.0);
                 }
                 break;
 
@@ -79,8 +81,8 @@ public class intakeSub {
                 break;
 
             case EXPELIR:
-                indexer.setPower(0.8);
-                intake.setPower(0.8);
+                indexer.setPower(1.0);
+                intake.setPower(1.0);
                 servoIntk.setPosition(1.0);
                 break;
 
@@ -88,7 +90,10 @@ public class intakeSub {
                 gamepad2.rumble(200);
                 gamepad1.rumble(200);
 
-                if (!shooterAtivo){
+
+                if (shooterAtivo) {
+                    intake.setPower(-1.0);
+                } else {
                     indexer.setPower(0);
                     intake.setPower(0);
                 }

@@ -171,8 +171,8 @@ public class auto12p2h extends OpMode {
     public void autonomousPathUpdate() {
         double tolerance = 1.0;
         double idleVel = (180 * SHOOTER_TICKS_PER_REV) / 60.0;
-        servoAR.setPosition(0.56);
-        servoAL.setPosition(0.66);
+        servoAR.setPosition(0.53);
+        servoAL.setPosition(0.63);
         turretAjustL.setPosition(0.08);
         turretAjustR.setPosition(0.08);
 
@@ -235,7 +235,7 @@ public class auto12p2h extends OpMode {
                         || isCloseToTarget(scorePose2, tolerance);
                 if (chegouNaPosicao
                         || isCloseToTarget(scorePose2, SHOOTER_SPINUP_DISTANCE)) {
-                    shooter(4, 1850, chegouNaPosicao);
+                    shooter(4, 1855, chegouNaPosicao);
                 }
                 break;
 

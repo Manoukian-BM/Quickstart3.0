@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -28,8 +27,7 @@ public class teleOpBlue extends LinearOpMode {
     private turretOdo turret;
     private Follower follower;
     private ElapsedTime timer;
-    private Servo servoAR;
-    private Servo servoAL;
+    private long lastTelemetryNs;
     private DistanceSensor distIntake1;
     private DistanceSensor distIntake2;
     private DistanceSensor distIntake3;
@@ -37,7 +35,7 @@ public class teleOpBlue extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        follower = Constants.create(hardwareMap);
+        follower = Constants.createTeleBlue(hardwareMap);
         if (follower == null) {
             telemetry.addLine("Pedro Pathing Follower nao configurado em Constants.create().");
             telemetry.update();
@@ -56,14 +54,13 @@ public class teleOpBlue extends LinearOpMode {
         distIntake2 = hardwareMap.get(DistanceSensor.class, "distIntake2");
         distIntake3 = hardwareMap.get(DistanceSensor.class, "distIntake3");
         distIntake4 = hardwareMap.get(DistanceSensor.class, "distIntake4");
-        servoAR = hardwareMap.get(Servo.class, "servoAR");
-        servoAL = hardwareMap.get(Servo.class, "servoAL");
 
-        servoAR.setPosition(0.83);
-        servoAL.setPosition(0.93);
+        // Mesma posicao de subir usada pelo botao do P2 em servoSub.
+        servo.  setArmRaised(true);
         timer = new ElapsedTime();
 
-        telemetry.addLine("TeleOp pronto.");
+        telemetry.addLine("TeleOp pronto. P1 D-pad direito: reset na marca (9.1,130.4,90 graus).");
+        telemetry.addLine("Segure LB do P2 para acompanhar o alvo. R1 ajusta pelas duas tags do meio. R3 alterna o modo manual.");
         telemetry.update();
         waitForStart();
 
@@ -71,46 +68,61 @@ public class teleOpBlue extends LinearOpMode {
             return;
         }
 
+        telemetry.setMsTransmissionInterval(200);
         timer.reset();
-        while (opModeIsActive()) {
-            double dI1 = distIntake1.getDistance(DistanceUnit.CM);
-            double dI2 = distIntake2.getDistance(DistanceUnit.CM);
-            double dI3 = distIntake3.getDistance(DistanceUnit.CM);
-            double dI4 = distIntake4.getDistance(DistanceUnit.CM);
+        try {
+            while (opModeIsActive()) {
+                double dI1 = distIntake1.getDistance(DistanceUnit.CM);
+                double dI2 = distIntake2.getDistance(DistanceUnit.CM);
+                double dI3 = distIntake3.getDistance(DistanceUnit.CM);
+                double dI4 = distIntake4.getDistance(DistanceUnit.CM);
 
-            follower.update();
-            Pose currentPose = follower.pose();
+                // Atualizar a pose uma vez por ciclo, com conducao pelo Pedro.
+                // Segurar L1 do P1 reduz os tres comandos da base para 50%.
+                double driveScale = gamepad1.left_bumper ? 0.5 : 1.0;
+                follower.manual(-gamepad1.left_stick_y * driveScale,
+                        -gamepad1.left_stick_x * driveScale, -gamepad1.right_stick_x * driveScale);
+                follower.update();
 
-            turret.update(gamepad1, gamepad2);
-            double distanciaHive = turretOdo.getDist();
+                turret.update(gamepad1, gamepad2);
+                double distanciaHive = turretOdo.getDist();
 
-            servo.update(gamepad1, gamepad2, shooter.tiroPolen(), shooter.tiroPolen());
-            intake.update(gamepad1, gamepad2, shooter.isAtirando(), dI1, dI2, dI3, dI4);
-            shooter.update(gamepad1, gamepad2, turretOdo.getDist(), intake.isColetando(),
-                    intake.isCuspindo(), turretOdo.getDist());
-            drive.teleopUpdate(gamepad1, gamepad2);
-//            double forward = -gamepad1.left_stick_y;
-//            double lateral = -gamepad1.left_stick_x;
-//            double turn = -gamepad1.right_stick_x;
-//            follower.manual(forward, lateral, turn);
-//            follower.update();
+                servo.update(gamepad1, gamepad2, shooter.tiroPolen(), shooter.tiroPolen());
+                boolean tiroSolicitado = gamepad2.right_trigger > 0.2 || gamepad2.left_trigger > 0.2
+                        || shooter.ownsFeedCycle();
+                intake.update(gamepad1, gamepad2, tiroSolicitado, dI1, dI2, dI3, dI4);
+                shooter.update(gamepad1, gamepad2, distanciaHive, intake.isColetando(),
+                        intake.isCuspindo(), distanciaHive);
+                // Os motores de conducao sao comandados pelo follower acima.
 
-            telemetry.addData("HIVE escolhida", turret.getSelectedHive());
-            telemetry.addData("Distancia da HIVE", turret.getDist());
-            telemetry.addData("Distancia HIVE esquerda", turret.getLeftHiveDistance());
-            telemetry.addData("Distancia HIVE direita", turret.getRightHiveDistance());
-            telemetry.addData("Angulo relativo", turret.getAngleDegrees());
-            telemetry.addData("Posicao do servo", turret.getServoPosition());
-            telemetry.addData("Follower ocupado", follower.isBusy());
-            telemetry.addData("X", currentPose.x());
-            telemetry.addData("Y", currentPose.y());
-            telemetry.addData("Aangulo", Math.toDegrees(currentPose.heading()));
-            telemetry.addData("Tempo", timer.seconds());
-            telemetry.addData("right_stick_x", gamepad2.right_stick_x);
-            telemetry.addData("RPM alvo", shooter.getTargetRPM());
-            telemetry.addData("RPM shooterL", shooter.getRPM());
-            telemetry.addData("Potencia shooters", shooter.getPower());
-            telemetry.update();
+                long telemetryNow=System.nanoTime();
+                if (telemetryNow-lastTelemetryNs>=200_000_000L) {
+                    lastTelemetryNs=telemetryNow;
+                    turret.addDiagnostics(telemetry);
+                    telemetry.addData("Distancia usada pelo RPM (cm)", "%.1f", distanciaHive * 2.54);
+                    telemetry.addData("Distancia HIVE esquerda", turret.getLeftHiveDistance());
+                    telemetry.addData("Distancia HIVE direita", turret.getRightHiveDistance());
+                    telemetry.addData("Angulo relativo", turret.getAngleDegrees());
+                    telemetry.addData("Posicao do servo", turret.getServoPosition());
+                    telemetry.addData("Follower ocupado", follower.isBusy());
+                    telemetry.addData("Tempo", timer.seconds());
+                    telemetry.addData("right_stick_x", gamepad2.right_stick_x);
+                    telemetry.addData("RPM alvo pela odometria", shooter.getTargetRPM());
+                    telemetry.addData("RPM shooterL", shooter.getRPM());
+                    telemetry.addData("Shooter pronto", shooter.isReady());
+                    telemetry.addData("Alimentacao do tiro", shooter.getFeedStatus());
+                    telemetry.addData("Ajuste fino mira (graus)", turret.getAutoTrimDegrees());
+                    telemetry.addData("Potencia shooterR/L", "%.2f / %.2f", shooter.getLeftPower(), shooter.getRightPower());
+//            telemetry.addData("DistIntake1", dI1);
+//            telemetry.addData("DistIntake2", dI2);
+//            telemetry.addData("DistIntake3", dI3);
+//            telemetry.addData("DistIntake4", dI4);
+                    telemetry.update();
+                }
+            }
+        } finally {
+            shooter.stop();
+            turret.close();
         }
     }
 }

@@ -21,7 +21,7 @@ import com.pedropathing.paths.Path;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 @Autonomous
-public class auto4p2hGarden extends OpMode {
+public class autoGarden extends OpMode {
 
     private Follower follower;
 
